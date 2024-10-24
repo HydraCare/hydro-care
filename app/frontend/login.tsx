@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { StyleSheet, View, Text } from 'react-native';
+
 export default function Test() {
     return (
         <View
@@ -10,9 +11,14 @@ export default function Test() {
             }}
         >
             <Text>
-                テストフロンエンド
+                Login page
             </Text>
         </View>
     )
 
-}
+
+};
+//css in js
+const styles = StyleSheet.create({
+
+});

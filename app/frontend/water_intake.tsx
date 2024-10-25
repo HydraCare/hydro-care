@@ -1,6 +1,6 @@
-import { Text, View } from "react-native";
-import Dashboard from "./dashboard";
-export default function Test() {
+import { StyleSheet, View, Text } from 'react-native';
+
+export default function Water_Intake() {
     return (
         <View
             style={{
@@ -11,11 +11,13 @@ export default function Test() {
             }}
         >
             <Text>
-                テストフロンエンド
+                xin chao
             </Text>
-            <Dashboard />
+            <Text>
+                Login page
+            </Text>
         </View>
-
     )
 
-}
+
+};

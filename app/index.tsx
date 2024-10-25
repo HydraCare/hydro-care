@@ -26,4 +26,5 @@ import { Redirect } from "expo-router";
 export default function Index() {
   return <Redirect href={"../frontend/test"} />;
   return <Redirect href={"../frontend/login"} />;
+  return <Redirect href={"../frontend/water_intake"} />;
 }

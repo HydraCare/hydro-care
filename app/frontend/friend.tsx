@@ -1,7 +1,6 @@
 import { StyleSheet, View, Text } from 'react-native';
-import Dashboard from './dashboard';
 
-export default function Water_Intake() {
+export default function friend() {
     return (
         <View
             style={{
@@ -12,14 +11,14 @@ export default function Water_Intake() {
             }}
         >
             <Text>
-                xin chao
+                friend page
             </Text>
-            <Text>
-                Login page
-            </Text>
-            <Dashboard />
         </View>
     )
 
 
 };
+//css in js
+const styles = StyleSheet.create({
+
+});

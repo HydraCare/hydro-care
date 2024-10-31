@@ -1,21 +1,16 @@
-import { Text, View } from "react-native";
-import Dashboard from "./dashboard";
+import { View, Text, StyleSheet } from 'react-native';
+
 export default function Test() {
     return (
-        <View
-            style={{
-
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-            }}
-        >
-            <Text>
-                テストフロンエンド
-            </Text>
-            <Dashboard />
+        <View style={[styles.container, { backgroundColor: 'white' }]}>
         </View>
-
-    )
-
+    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+});

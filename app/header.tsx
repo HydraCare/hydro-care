@@ -14,6 +14,7 @@ const Header: React.FC<HeaderProps> = ({ title, back, onBackPress }) => {
             onBackPress();
         } else {
             console.log("ない")
+
         }
     };
     return (

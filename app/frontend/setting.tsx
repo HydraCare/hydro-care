@@ -15,7 +15,7 @@ const Setting: React.FC<{ onNavigate: () => void }> = ({ onNavigate }) => {
     const toggleDrinkingAlert = () => setIsDrinkingAlertEnabled(!isDrinkingAlertEnabled);
     const navigation = useNavigation(); // Hook navigation
     const goToNotificationPage = () => {
-        navigation.navigate('Notification');
+        // navigation.navigate('Notification');
     };
     return (
         <View style={styles.container}>

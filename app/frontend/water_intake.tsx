@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, Image, TouchableOpacity, Animated } from 'react-native';
+import { StyleSheet, View, Text, Image, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import Header from '../header';
 
@@ -54,7 +54,7 @@ const Water_Intake = () => {
     };
 
     return (
-        <View style={styles.background}>
+        <ScrollView style={styles.background}>
             <Header title="水分摂取" back='' />
             <View style={styles.dateTimeContainer}>
                 <View style={styles.dateTimeLeft}>
@@ -132,7 +132,7 @@ const Water_Intake = () => {
                 </View>
 
             </View>
-        </View>
+        </ScrollView>
     );
 };
 

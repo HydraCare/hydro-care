@@ -1,20 +1,24 @@
-import React from 'react';
-import { View, Image, StyleSheet } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import WaterIntake from './frontend/water_intake'; // water Tab Component
-import Setting from './frontend/setting';
-import History from './frontend/history';
-import Friend from './frontend/friend';
-import Challenge from './frontend/challenge';
+import React from "react";
+import { View, Image, StyleSheet } from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import WaterIntake from "./frontend/water_intake"; // water Tab Component
+import Setting from "./frontend/setting";
+import History from "./frontend/history";
+import Friend from "./frontend/friend";
+import Challenge from "./frontend/challenge";
+import Login from "./frontend/login";
 
 const Tab = createBottomTabNavigator();
 
-const TabIcon = ({ focused, source, sourceFocused }: { focused: boolean, source: any, sourceFocused: any }) => (
-  <Image
-    source={focused ? sourceFocused : source}
-    style={styles.icon}
-  />
-);
+const TabIcon = ({
+  focused,
+  source,
+  sourceFocused,
+}: {
+  focused: boolean;
+  source: any;
+  sourceFocused: any;
+}) => <Image source={focused ? sourceFocused : source} style={styles.icon} />;
 
 export default function Index() {
   return (
@@ -27,13 +31,13 @@ export default function Index() {
         name="水分摂取"
         component={WaterIntake}
         options={{
-          title: '',
+          title: "",
           headerShown: false,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              source={require('@/assets/images/water.png')}
-              sourceFocused={require('@/assets/images/water2.png')}
+              source={require("@/assets/images/water.png")}
+              sourceFocused={require("@/assets/images/water2.png")}
             />
           ),
         }}
@@ -42,13 +46,13 @@ export default function Index() {
         name="Details"
         component={History}
         options={{
-          title: '',
+          title: "",
           headerShown: false,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              source={require('@/assets/images/history.png')}
-              sourceFocused={require('@/assets/images/history_color.png')}
+              source={require("@/assets/images/history.png")}
+              sourceFocused={require("@/assets/images/history_color.png")}
             />
           ),
         }}
@@ -57,13 +61,13 @@ export default function Index() {
         name="Share"
         component={Friend}
         options={{
-          title: '',
+          title: "",
           headerShown: false,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              source={require('@/assets/images/friend.png')}
-              sourceFocused={require('@/assets/images/friend_color.png')}
+              source={require("@/assets/images/friend.png")}
+              sourceFocused={require("@/assets/images/friend_color.png")}
             />
           ),
         }}
@@ -72,13 +76,13 @@ export default function Index() {
         name="チャレンジ"
         component={Challenge}
         options={{
-          title: '',
+          title: "",
           headerShown: false,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              source={require('@/assets/images/challenge.png')}
-              sourceFocused={require('@/assets/images/challenge_color.png')}
+              source={require("@/assets/images/challenge.png")}
+              sourceFocused={require("@/assets/images/challenge_color.png")}
             />
           ),
         }}
@@ -87,13 +91,13 @@ export default function Index() {
         name="設定"
         component={Setting}
         options={{
-          title: '',
+          title: "",
           headerShown: false,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              source={require('@/assets/images/setting.png')}
-              sourceFocused={require('@/assets/images/setting_color.png')}
+              source={require("@/assets/images/setting.png")}
+              sourceFocused={require("@/assets/images/setting_color.png")}
             />
           ),
         }}

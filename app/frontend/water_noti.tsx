@@ -2,7 +2,7 @@ import { StyleSheet, View, Text } from 'react-native';
 import { NavigationContainer, useRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Header from '../header';
-const Notification: React.FC = () => {
+const Water_noti: React.FC = () => {
     const route = useRoute();
     const { onGoBack } = route.params as { onGoBack: () => void };
 
@@ -11,7 +11,7 @@ const Notification: React.FC = () => {
 
             <Header title="通知" back='Back' onBackPress={onGoBack} />
             <Text>
-                通知
+                waterの 通知
             </Text>
         </View >
     )
@@ -23,4 +23,4 @@ const Notification: React.FC = () => {
 const styles = StyleSheet.create({
 
 });
-export default Notification;
+export default Water_noti;

@@ -105,79 +105,81 @@ const WaterIntakeHistory: React.FC = () => {
         <View style={styles.container}>
             <Header title="履歴" back='' />
             {/* Tab Navigation */}
-            <View style={styles.tabContainer}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'day' && styles.activeTab]}
-                    onPress={() => handleTabChange('day')}
-                >
-                    <Text style={styles.tabText}>日</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'week' && styles.activeTab]}
-                    onPress={() => handleTabChange('week')}
-                >
-                    <Text style={styles.tabText}>週</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'month' && styles.activeTab]}
-                    onPress={() => handleTabChange('month')}
-                >
-                    <Text style={styles.tabText}>月</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'year' && styles.activeTab]}
-                    onPress={() => handleTabChange('year')}
-                >
-                    <Text style={styles.tabText}>年</Text>
-                </TouchableOpacity>
-            </View>
+            <ScrollView>
+                <View style={styles.tabContainer}>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'day' && styles.activeTab]}
+                        onPress={() => handleTabChange('day')}
+                    >
+                        <Text style={styles.tabText}>日</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'week' && styles.activeTab]}
+                        onPress={() => handleTabChange('week')}
+                    >
+                        <Text style={styles.tabText}>週</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'month' && styles.activeTab]}
+                        onPress={() => handleTabChange('month')}
+                    >
+                        <Text style={styles.tabText}>月</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'year' && styles.activeTab]}
+                        onPress={() => handleTabChange('year')}
+                    >
+                        <Text style={styles.tabText}>年</Text>
+                    </TouchableOpacity>
+                </View>
 
-            {/* Biểu đồ */}
-            <Text style={styles.chartTitle}>
-                {activeTab === 'day'
-                    ? '今日'
-                    : activeTab === 'week'
-                        ? '2024/10/13~2024/10/20'
-                        : activeTab === 'month'
-                            ? '2024年10月'
-                            : '2024年'}
-            </Text>
-            <BarChart
-                data={dataToDisplay}
-                width={Dimensions.get('window').width - 50}
-                height={250}
-                chartConfig={chartConfig}
-                withHorizontalLabels={true}
-                showValuesOnTopOfBars={false}  //value top
-                yAxisLabel=""
-                yAxisSuffix="ml"
-            />
-
-            {/* Tổng kết */}
-            <View style={styles.summaryContainer}>
-                <Text style={styles.summaryText}>
-                    合計 : {summary[activeTab as 'week' | 'month' | 'year']?.total}ml
+                {/* Biểu đồ */}
+                <Text style={styles.chartTitle}>
+                    {activeTab === 'day'
+                        ? '今日'
+                        : activeTab === 'week'
+                            ? '2024/10/13~2024/10/20'
+                            : activeTab === 'month'
+                                ? '2024年10月'
+                                : '2024年'}
                 </Text>
-                <Text style={styles.summaryText}>
-                    平均 : {summary[activeTab as 'week' | 'month' | 'year']?.average}ml
-                </Text>
+                <BarChart
+                    data={dataToDisplay}
+                    width={Dimensions.get('window').width - 50}
+                    height={250}
+                    chartConfig={chartConfig}
+                    withHorizontalLabels={true}
+                    showValuesOnTopOfBars={false}  //value top
+                    yAxisLabel=""
+                    yAxisSuffix="ml"
+                />
+
+                {/* Tổng kết */}
+                <View style={styles.summaryContainer}>
+                    <Text style={styles.summaryText}>
+                        合計 : {summary[activeTab as 'week' | 'month' | 'year']?.total}ml
+                    </Text>
+                    <Text style={styles.summaryText}>
+                        平均 : {summary[activeTab as 'week' | 'month' | 'year']?.average}ml
+                    </Text>
 
 
-            </View>
+                </View>
 
-            {/* Log Nước */}
-            <View style={styles.logsContainer}>
-                <Text style={styles.logsTitle}>今日のログ</Text>
-                <ScrollView style={styles.logsContainer}>
-                    {waterLogs.map((log, index) => (
-                        <View key={index} style={styles.logItem}>
-                            <Text>{log.time} - {log.type} {log.amount}ml</Text>
-                        </View>
-                    ))}
-                </ScrollView>
-            </View>
+                {/* Log Nước */}
+                <View style={styles.logsContainer}>
+                    <Text style={styles.logsTitle}>今日のログ</Text>
+                    <ScrollView style={styles.logsContainer}>
+                        {waterLogs.map((log, index) => (
+                            <View key={index} style={styles.logItem}>
+                                <Text>{log.time} - {log.type} {log.amount}ml</Text>
+                            </View>
+                        ))}
+                    </ScrollView>
+                </View>
 
-            <Button title="ログ表示" onPress={() => alert('ログ表示ボタンがクリックされました')} />
+                <Button title="ログ表示" onPress={() => alert('ログ表示ボタンがクリックされました')} />
+            </ScrollView>
         </View>
     );
 };

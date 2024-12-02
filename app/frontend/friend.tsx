@@ -14,31 +14,33 @@ const Friend: React.FC<{ onNavigate: () => void }> = ({ onNavigate }) => {
     return (
         <View style={styles.container}>
             <Header title="共有中" />
-            <View style={styles.homeContainer}>
-                <TouchableOpacity style={styles.button} onPress={onNavigate}>
-                    <Text style={styles.buttonText}>IDで追加する</Text>
-                </TouchableOpacity>
-            </View>
-            <View>
-                <Text style={styles.textContainer}>フォロー中</Text>
-            </View>
-            <ScrollView style={styles.logsContainer}>
-                {follow.map((log, index) => (
-                    <View key={index} style={styles.logItem}>
-                        <View>
-                            <Image source={log.image} style={styles.icon} />
-                        </View>
-                        <View>
+            <ScrollView>
+                <View style={styles.homeContainer}>
+                    <TouchableOpacity style={styles.button} onPress={onNavigate}>
+                        <Text style={styles.buttonText}>IDで追加する</Text>
+                    </TouchableOpacity>
+                </View>
+                <View>
+                    <Text style={styles.textContainer}>フォロー中</Text>
+                </View>
+                <ScrollView style={styles.logsContainer}>
+                    {follow.map((log, index) => (
+                        <View key={index} style={styles.logItem}>
                             <View>
-                                <Text>Name : {log.Name} </Text>
+                                <Image source={log.image} style={styles.icon} />
                             </View>
                             <View>
-                                <Text>毎日の目標 : {log.water} ㎖</Text>
+                                <View>
+                                    <Text>Name : {log.Name} </Text>
+                                </View>
+                                <View>
+                                    <Text>毎日の目標 : {log.water} ㎖</Text>
+                                </View>
                             </View>
-                        </View>
 
-                    </View>
-                ))}
+                        </View>
+                    ))}
+                </ScrollView>
             </ScrollView>
         </View>
     );

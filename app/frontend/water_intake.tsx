@@ -1,9 +1,11 @@
 import { StyleSheet, View, Text, Image, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import Header from '../header';
+import BotTab from '..';
 
 const Water_Intake = () => {
     const dailyGoal = 2000; // 目標摂取水分
+    const [count, setCount] = useState(1500);
     const [amount, setAmount] = useState(0); // Lượng nước đã uống
     const [remaining, setRemaining] = useState(dailyGoal); // Lượng nước còn lại
     const [waterLevel, setWaterLevel] = useState(new Animated.Value(0)); // Animated value cho mức nước
@@ -18,11 +20,26 @@ const Water_Intake = () => {
 
         Animated.timing(waterLevel, {
             toValue: (newAmount / dailyGoal) * 100, // Cập nhật tỷ lệ phần trăm cho mức nước
-            duration: 500, // Thời gian animation
+            duration: 1500, // Thời gian animation
             useNativeDriver: false, // Không sử dụng native driver vì ta thay đổi chiều cao
         }).start();
     };
+    //引く処理
+    const subWater = (amountSub: number) => {
+        const newAmount = amount - amountSub; // Tính lượng nước đã uống sau khi trừ đi amountSub
+        const newRemaining = dailyGoal - newAmount; // Tính lượng nước còn lại cần uống
 
+        // Cập nhật trạng thái
+        setAmount(newAmount);
+        setRemaining(newRemaining);
+
+        // Cập nhật mức nước với animation
+        Animated.timing(waterLevel, {
+            toValue: (newAmount / dailyGoal) * 100, // Tính tỷ lệ phần trăm mức nước
+            duration: 1500, // Thời gian animation
+            useNativeDriver: false, // Không sử dụng native driver vì chúng ta đang thay đổi chiều cao
+        }).start();
+    };
     // Hàm reset
     const reset = () => {
         setAmount(0);
@@ -54,85 +71,90 @@ const Water_Intake = () => {
     };
 
     return (
-        <ScrollView style={styles.background}>
+        <View style={styles.background}>
             <Header title="水分摂取" back='' />
-            <View style={styles.dateTimeContainer}>
-                <View style={styles.dateTimeLeft}>
-                    {/* <Image
+            <ScrollView>
+                <View style={styles.dateTimeContainer}>
+                    <View style={styles.dateTimeLeft}>
+                        {/* <Image
                         source={require('@/assets/images/calender.png')}
                         style={styles.imageCalender}
                     /> */}
-                    <Text style={styles.date}>{currentDate}</Text>
-                    <Text style={styles.time}>{currentTime}</Text>
+                        <Text style={styles.date}>{currentDate}</Text>
+                        <Text style={styles.time}>{currentTime}</Text>
+                    </View>
+                    <View style={styles.buttonsRight}>
+                        <TouchableOpacity onPress={() => addWater(100)}>
+                            <Image
+                                source={require('@/assets/images/plus.png')}  // Đặt đúng đường dẫn tới hình ảnh
+                                style={styles.image}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => bluetooth()}>
+                            <Image
+                                source={require('@/assets/images/bluetooth.png')}  // Đặt đúng đường dẫn tới hình ảnh
+                                style={styles.image}
+                            />
+                        </TouchableOpacity>
+                    </View>
                 </View>
-                <View style={styles.buttonsRight}>
-                    <TouchableOpacity onPress={() => addWater(100)}>
+
+                <View style={styles.container}>
+                    <Text style={styles.goalText}>一日の目標水分摂取 {dailyGoal}ml</Text>
+
+                    <View style={styles.bottleContainer}>
                         <Image
-                            source={require('@/assets/images/plus.png')}  // Đặt đúng đường dẫn tới hình ảnh
-                            style={styles.image}
+                            source={require('@/assets/images/bottle.png')}
+                            style={styles.bottle}
                         />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => bluetooth()}>
-                        <Image
-                            source={require('@/assets/images/bluetooth.png')}  // Đặt đúng đường dẫn tới hình ảnh
-                            style={styles.image}
+                        <Animated.View
+                            style={[
+                                styles.water,
+                                {
+                                    height: waterLevel.interpolate({
+                                        inputRange: [0, 100],
+                                        outputRange: ['0%', '100%'], // Đặt chiều cao của mức nước
+                                    }),
+                                },
+                            ]}
                         />
+                    </View>
+
+                    <Text style={styles.amountText}>容量 : {amount}ml</Text>
+                    <TouchableOpacity onPress={() => addWater(100)} style={styles.addButton}>
+                        <Text style={styles.buttonText}>Add 100ml</Text>
                     </TouchableOpacity>
+                    {/* <TouchableOpacity onPress={() => subWater(100)} style={styles.addButton}>
+                        <Text style={styles.buttonText}>remove 100ml</Text>
+                    </TouchableOpacity> */}
+                    <TouchableOpacity onPress={reset} style={styles.resetButton}>
+                        <Text style={styles.buttonText}>Reset</Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.goalText}>ここに通知が流れる </Text>
+
+
+                    <Text style={styles.progressText}>
+                        {amount}ml | {((amount / dailyGoal) * 100).toFixed(0)}% 残り: {remaining}ml
+                    </Text>
+                    <View style={styles.progressContainer}>
+                        <Animated.View
+                            style={[
+                                styles.progressBar,
+                                {
+                                    width: waterLevel.interpolate({
+                                        inputRange: [0, 100],
+                                        outputRange: ['0%', '100%'],
+                                    }),
+                                },
+                            ]}
+                        />
+                    </View>
+
                 </View>
-            </View>
-
-            <View style={styles.container}>
-                <Text style={styles.goalText}>一日の目標水分摂取 {dailyGoal}ml</Text>
-
-                <View style={styles.bottleContainer}>
-                    {/* Chai nước */}
-                    <Image
-                        source={require('@/assets/images/bottle.png')}
-                        style={styles.bottle}
-                    />
-                    <Animated.View
-                        style={[
-                            styles.water,
-                            {
-                                height: waterLevel.interpolate({
-                                    inputRange: [0, 100],
-                                    outputRange: ['0%', '100%'], // Đặt chiều cao của mức nước
-                                }),
-                            },
-                        ]}
-                    />
-                </View>
-
-                <Text style={styles.amountText}>容量 : {amount}ml</Text>
-                <TouchableOpacity onPress={() => addWater(100)} style={styles.addButton}>
-                    <Text style={styles.buttonText}>Add 100ml</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={reset} style={styles.resetButton}>
-                    <Text style={styles.buttonText}>Reset</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.goalText}>ここに通知が流れる </Text>
-
-
-                <Text style={styles.progressText}>
-                    {amount}ml | {((amount / dailyGoal) * 100).toFixed(0)}% 残り: {remaining}ml
-                </Text>
-                <View style={styles.progressContainer}>
-                    <Animated.View
-                        style={[
-                            styles.progressBar,
-                            {
-                                width: waterLevel.interpolate({
-                                    inputRange: [0, 100],
-                                    outputRange: ['0%', '100%'],
-                                }),
-                            },
-                        ]}
-                    />
-                </View>
-
-            </View>
-        </ScrollView>
+            </ScrollView>
+            {/* <BotTab></BotTab> */}
+        </View>
     );
 };
 
@@ -190,6 +212,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 200,
         marginTop: 5,
+        zIndex: 1,
     },
     bottleContainer: {
         position: 'relative',
@@ -203,7 +226,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         width: '100%',
-        backgroundColor: '#ADD8E6',
+        backgroundColor: '#4CAEE8',
     },
     amountText: {
         fontSize: 18,

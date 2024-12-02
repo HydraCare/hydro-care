@@ -18,13 +18,18 @@ const TabIcon = ({
   focused: boolean;
   source: any;
   sourceFocused: any;
-}) => <Image source={focused ? sourceFocused : source} style={styles.icon} />;
+}) => (
+  <Image
+    source={focused ? sourceFocused : source}
+    style={styles.icon} // Sử dụng style icon để căn giữa
+  />
+);
 
 export default function Index() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: styles.tabBar, // Cập nhật tabBarStyle
       }}
     >
       <Tab.Screen
@@ -108,10 +113,12 @@ export default function Index() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 70,
+    height: 75,
+    paddingTop: 15,
+
   },
   icon: {
-    width: 40,
-    height: 40,
+    width: 30,
+    height: 30,
   },
 });

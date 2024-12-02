@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Water_Intake from './frontend/water_intake';
+import { useFonts } from 'expo-font';
+import { SplashScreen } from 'expo-router';
 interface HeaderProps {
     title: string;
     back?: string;
     onBackPress?: () => void;
 }
 const Header: React.FC<HeaderProps> = ({ title, back, onBackPress }) => {
+
     const navigation = useNavigation();
     const handleBackPress = () => {
         if (onBackPress) {

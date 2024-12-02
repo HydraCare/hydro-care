@@ -1,11 +1,12 @@
-import { StyleSheet, View, Text, Image, TouchableOpacity, Animated, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, Image, TouchableOpacity, Animated, ScrollView, Modal, TextInput, Button, NativeSyntheticEvent, TextInputChangeEventData } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import Header from '../header';
-import BotTab from '..';
+import bluetooth from './bluetooth';
+import CalendarPicker from './calender_picker';
 
 const Water_Intake = () => {
     const dailyGoal = 2000; // 目標摂取水分
-    const [count, setCount] = useState(1500);
+    const [count, setCount] = useState(1500); //ボトルの初期化
     const [amount, setAmount] = useState(0); // Lượng nước đã uống
     const [remaining, setRemaining] = useState(dailyGoal); // Lượng nước còn lại
     const [waterLevel, setWaterLevel] = useState(new Animated.Value(0)); // Animated value cho mức nước
@@ -26,7 +27,8 @@ const Water_Intake = () => {
     };
     //引く処理
     const subWater = (amountSub: number) => {
-        const newAmount = amount - amountSub; // Tính lượng nước đã uống sau khi trừ đi amountSub
+        const newCount = count - amountSub; // Tính lượng nước đã uống sau khi trừ đi amountSub
+        const newAmount = amount + amountSub;
         const newRemaining = dailyGoal - newAmount; // Tính lượng nước còn lại cần uống
 
         // Cập nhật trạng thái
@@ -40,16 +42,15 @@ const Water_Intake = () => {
             useNativeDriver: false, // Không sử dụng native driver vì chúng ta đang thay đổi chiều cao
         }).start();
     };
-    // Hàm reset
+    // reset
     const reset = () => {
         setAmount(0);
         setRemaining(dailyGoal);
         setWaterLevel(new Animated.Value(0)); // Đặt lại mức nước
     };
-
+    // カレンダー関数
     const [currentDate, setCurrentDate] = useState<string>('');
     const [currentTime, setCurrentTime] = useState<string>('');
-
     useEffect(() => {
         const updateDateTime = () => {
             const date = new Date();
@@ -58,16 +59,37 @@ const Water_Intake = () => {
             setCurrentDate(dayOfMonth.toString() + "日");
             setCurrentTime(timeString);
         };
-
         updateDateTime();
         const intervalId = setInterval(updateDateTime, 60000);
-
-        // Dọn dẹp interval khi component unmount
         return () => clearInterval(intervalId);
     }, []);
 
+    // modal　関数
+    const [modalVisible, setModalVisible] = useState(false);
+    const [mount, setMount] = useState(200); // Initial amount is 200ml
+    const [waterType, setWaterType] = useState<string>('水'); // Default type of water is 水
+    const [date, setDate] = useState<string>(''); // Date and time for water intake
+    const [isEditing, setIsEditing] = useState(false); // Kiểm tra xem đang chỉnh sửa hay không
+
+    const handleSubmit = () => {
+        // Handle submission logic here (e.g., store the data or update state)
+        console.log(`Water Type: ${waterType}, Amount: ${mount}ml, Date: ${date}`);
+        setModalVisible(false); // Close modal after submission
+    };
+    const handleAmountChange = (e: NativeSyntheticEvent<TextInputChangeEventData>) => {
+        const newAmount = e.nativeEvent.text; // Sử dụng `nativeEvent.text` để lấy giá trị chuỗi
+        if (!isNaN(parseFloat(newAmount))) {
+            setMount(parseFloat(newAmount)); // Chuyển đổi chuỗi thành số nếu hợp lệ
+        }
+    };
     const bluetooth = () => {
-        console.log("Bluetooth button clicked");
+        console.log("click blue")
+    }
+    //Calendar 関数
+    const [selectedDate, setSelectedDate] = useState<string>('');
+
+    const handleDateChange = (date: string) => {
+        setSelectedDate(date); // Cập nhật ngày khi người dùng chọn
     };
 
     return (
@@ -84,15 +106,15 @@ const Water_Intake = () => {
                         <Text style={styles.time}>{currentTime}</Text>
                     </View>
                     <View style={styles.buttonsRight}>
-                        <TouchableOpacity onPress={() => addWater(100)}>
+                        <TouchableOpacity onPress={() => setModalVisible(true)}>
                             <Image
-                                source={require('@/assets/images/plus.png')}  // Đặt đúng đường dẫn tới hình ảnh
+                                source={require('@/assets/images/plus.png')}
                                 style={styles.image}
                             />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => bluetooth()}>
                             <Image
-                                source={require('@/assets/images/bluetooth.png')}  // Đặt đúng đường dẫn tới hình ảnh
+                                source={require('@/assets/images/bluetooth.png')}
                                 style={styles.image}
                             />
                         </TouchableOpacity>
@@ -113,20 +135,20 @@ const Water_Intake = () => {
                                 {
                                     height: waterLevel.interpolate({
                                         inputRange: [0, 100],
-                                        outputRange: ['0%', '100%'], // Đặt chiều cao của mức nước
+                                        outputRange: ['100%', '0%'], // Đặt chiều cao của mức nước
                                     }),
                                 },
                             ]}
                         />
                     </View>
 
-                    <Text style={styles.amountText}>容量 : {amount}ml</Text>
-                    <TouchableOpacity onPress={() => addWater(100)} style={styles.addButton}>
+                    <Text style={styles.amountText}>容量 : {count - amount}ml</Text>
+                    {/* <TouchableOpacity onPress={() => addWater(100)} style={styles.addButton}>
                         <Text style={styles.buttonText}>Add 100ml</Text>
-                    </TouchableOpacity>
-                    {/* <TouchableOpacity onPress={() => subWater(100)} style={styles.addButton}>
-                        <Text style={styles.buttonText}>remove 100ml</Text>
                     </TouchableOpacity> */}
+                    <TouchableOpacity onPress={() => subWater(100)} style={styles.addButton}>
+                        <Text style={styles.buttonText}>飲んだ水の量 100ml</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={reset} style={styles.resetButton}>
                         <Text style={styles.buttonText}>Reset</Text>
                     </TouchableOpacity>
@@ -153,8 +175,74 @@ const Water_Intake = () => {
 
                 </View>
             </ScrollView>
+
+            <Modal
+                visible={modalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+                        <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                            <Text style={styles.closeText}>×</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.title}>
+                            {isEditing ? (
+                                <TextInput
+                                    style={styles.input}
+                                    keyboardType="numeric" // Hiển thị bàn phím số
+                                    value={mount.toString()}
+                                    onChange={handleAmountChange}
+                                    onBlur={() => setIsEditing(false)} // Khi rời khỏi TextInput, chuyển về trạng thái xem
+                                />
+                            ) : (
+                                <TouchableOpacity onPress={() => setIsEditing(true)}>
+                                    <Text style={styles.input}>{mount}ml</Text>
+                                </TouchableOpacity>
+                            )}
+                        </Text>
+                        <Text style={styles.subtitle}>ジャンル</Text>
+
+                        {/* Water Type Buttons */}
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                onPress={() => setWaterType('水')}
+                                style={[styles.button, waterType === '水' && styles.selectedButton]}
+                            >
+                                <Text style={[styles.buttonText3, waterType === '水' && styles.buttonText2]}>水</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setWaterType('炭酸水')}
+                                style={[styles.button, waterType === '炭酸水' && styles.selectedButton]}
+                            >
+                                <Text style={[styles.buttonText3, waterType === '炭酸水' && styles.buttonText2]}>炭酸水</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setWaterType('お茶')}
+                                style={[styles.button, waterType === 'お茶' && styles.selectedButton]}
+                            >
+                                <Text style={[styles.buttonText3, waterType === 'お茶' && styles.buttonText2]}>お茶</Text>
+                            </TouchableOpacity>
+                            {/* <TouchableOpacity onPress={() => setWaterType('スムージー')} style={styles.button}>
+                                <Text style={styles.buttonText}>スムージー</Text>
+                            </TouchableOpacity> */}
+                        </View>
+
+                        {/* Date and Time Input */}
+                        <Text style={styles.selectedDateText}>
+                            {selectedDate ? `selected: ${selectedDate}` : 'not select'}
+                        </Text>
+                        <CalendarPicker onDateChange={handleDateChange} />
+                        {/* Submit Button */}
+                        <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
+                            <Text style={styles.submitButtonText}>登録</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal >
             {/* <BotTab></BotTab> */}
-        </View>
+        </View >
     );
 };
 
@@ -175,6 +263,7 @@ const styles = StyleSheet.create({
 
     // },
     goalText: {
+
         fontSize: 18,
         marginBottom: 10,
     },
@@ -249,10 +338,10 @@ const styles = StyleSheet.create({
     },
     resetButton: {
         backgroundColor: '#f44336',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
+        paddingVertical: 5,
+        paddingHorizontal: 13,
         borderRadius: 8,
-        marginTop: 10,
+        marginTop: 5,
     },
     progressContainer: {
         width: '80%',
@@ -265,6 +354,104 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: '#1B94DA',
         borderRadius: 10
+    },
+    //modal styles
+    modalBackground: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContainer: {
+        width: 300,
+        padding: 20,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+    },
+    closeText: {
+        fontSize: 24,
+        paddingRight: 8,
+        color: '#000',
+    },
+    title: {
+        fontSize: 32,
+        fontWeight: 'bold',
+    },
+    subtitle: {
+        fontSize: 18,
+        marginBottom: 20,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        marginBottom: 20,
+        color: '#4CAEE8',
+    },
+    button: {
+        backgroundColor: '#E6E6E6',
+        color: '#4CAEE8',
+        width: 80,
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 10,
+        margin: 5,
+        borderRadius: 7,
+    },
+    buttonText2: {
+        fontSize: 16,
+        color: 'black',
+        marginVertical: 5,
+    },
+    buttonText3: {
+        fontSize: 17,
+        color: '#71A5FF',
+        marginVertical: 5,
+    },
+    selectedButton: {
+        backgroundColor: '#ADD8E6',
+
+    },
+    input: {
+        fontSize: 30,
+        fontWeight: 'bold',
+        color: '#333',
+        textAlign: 'center',
+        borderBottomWidth: 1,
+        width: 100,
+        padding: 5,
+    },
+    icon: {
+        width: 30,
+        height: 30,
+        marginBottom: 5,
+    },
+    dateInput: {
+        height: 40,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        marginBottom: 20,
+        width: '100%',
+        paddingHorizontal: 10,
+    },
+    submitButton: {
+        backgroundColor: '#4CAF50',
+        padding: 10,
+        borderRadius: 5,
+    },
+    submitButtonText: {
+        fontSize: 18,
+        color: '#fff',
+    },
+    selectedDateText: {
+        fontSize: 18,
+        color: '#333',
+        marginBottom: 20,
     },
 });
 

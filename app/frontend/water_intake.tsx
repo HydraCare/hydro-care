@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import Header from '../header';
 import bluetooth from './bluetooth';
 import CalendarPicker from './calender_picker';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import BluetoothModal from './bluetooth';
 
 const Water_Intake = () => {
     const dailyGoal = 2000; // 目標摂取水分
@@ -82,9 +84,14 @@ const Water_Intake = () => {
             setMount(parseFloat(newAmount)); // Chuyển đổi chuỗi thành số nếu hợp lệ
         }
     };
+    const [modalBlue, setModalBlue] = useState(false);
     const bluetooth = () => {
-        console.log("click blue")
+        setModalBlue(!modalBlue);
     }
+    const handleConnect = () => {
+        console.log("Connecting to Bluetooth device...");
+        bluetooth(); // Đóng modal sau khi kết nối
+    };
     //Calendar 関数
     const [selectedDate, setSelectedDate] = useState<string>('');
 
@@ -118,6 +125,7 @@ const Water_Intake = () => {
                                 style={styles.image}
                             />
                         </TouchableOpacity>
+                        <BluetoothModal visible={modalBlue} onClose={bluetooth} onConnect={handleConnect} />
                     </View>
                 </View>
 
@@ -125,10 +133,11 @@ const Water_Intake = () => {
                     <Text style={styles.goalText}>一日の目標水分摂取 {dailyGoal}ml</Text>
 
                     <View style={styles.bottleContainer}>
-                        <Image
+                        {/* <Image
                             source={require('@/assets/images/bottle.png')}
                             style={styles.bottle}
-                        />
+                        /> */}
+
                         <Animated.View
                             style={[
                                 styles.water,
@@ -224,9 +233,6 @@ const Water_Intake = () => {
                             >
                                 <Text style={[styles.buttonText3, waterType === 'お茶' && styles.buttonText2]}>お茶</Text>
                             </TouchableOpacity>
-                            {/* <TouchableOpacity onPress={() => setWaterType('スムージー')} style={styles.button}>
-                                <Text style={styles.buttonText}>スムージー</Text>
-                            </TouchableOpacity> */}
                         </View>
 
                         {/* Date and Time Input */}
@@ -255,7 +261,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#E6F2F9',
-        padding: 20,
+        padding: 10,
     },
     // imageCalender: {
     //     width: 150,
@@ -263,9 +269,9 @@ const styles = StyleSheet.create({
 
     // },
     goalText: {
-
-        fontSize: 18,
-        marginBottom: 10,
+        fontSize: 20,
+        marginBottom: 15,
+        fontWeight: 'bold'
     },
     dateTimeContainer: {
         flexDirection: 'row',
@@ -303,13 +309,24 @@ const styles = StyleSheet.create({
         marginTop: 5,
         zIndex: 1,
     },
+    // bottleContainer: {
+    //     position: 'relative',
+    //     alignItems: 'center',
+    //     justifyContent: 'flex-end',
+    //     width: 100,
+    //     height: 200,
+    //     marginTop: 20,
+    // },
     bottleContainer: {
-        position: 'relative',
-        alignItems: 'center',
+        width: 120,
+        height: 300, // Chiều cao chai nước
         justifyContent: 'flex-end',
-        width: 100,
-        height: 200,
-        marginTop: 20,
+        alignItems: 'center',
+        borderColor: '#000',
+        borderWidth: 2,
+        borderRadius: 20,
+        position: 'relative',
+        overflow: 'hidden',
     },
     water: {
         position: 'absolute',
@@ -322,7 +339,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     progressText: {
-        marginTop: 20,
+        marginTop: 10,
         fontSize: 18
     },
     buttonText: {
@@ -341,7 +358,7 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         paddingHorizontal: 13,
         borderRadius: 8,
-        marginTop: 5,
+        margin: 8,
     },
     progressContainer: {
         width: '80%',

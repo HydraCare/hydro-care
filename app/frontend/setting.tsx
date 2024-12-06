@@ -93,6 +93,9 @@ function Setting() {
                         <Text style={styles.settingLabel}>パスワード</Text>
                         <Image source={require('@/assets/images/angle-right.png')} style={styles.angle_right} />
                     </View>
+                    {/* <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+                        <Text style={styles.logoutButtonText}>ログアウト</Text>
+                    </TouchableOpacity> */}
                 </View>
             </ScrollView>
         </View>
@@ -167,6 +170,19 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#333',
         marginTop: 5,
+    },
+    logoutButton: {
+        backgroundColor: "#FF4C4C",
+        paddingVertical: 12,
+        paddingHorizontal: 30,
+        borderRadius: 25,
+        marginTop: 15,
+
+        alignItems: "center",
+    },
+    logoutButtonText: {
+        color: "#fff",
+        fontSize: 18,
     },
 });
 

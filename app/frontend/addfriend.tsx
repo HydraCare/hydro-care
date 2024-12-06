@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import Header from '../header';
-const AddFriend: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
+// const AddFriend: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
+const AddFriend = ({ navigation }: any) => {
     const [id, setId] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const follow = [
@@ -11,8 +12,8 @@ const AddFriend: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
     ];
     const handleBack = () => {
         console.log("aa")
-        onGoBack()
-    }
+        navigation.goBack()
+    } // Quay lại màn hình trước
     useEffect(() => {
         if (id.trim() === '') {
             setSearchResults([]);
@@ -25,6 +26,9 @@ const AddFriend: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
         setSearchResults(results); // Cập nhật danh sách kết quả tìm kiếm
     }, [id]); // Tự động tìm kiếm khi id thay đổi
 
+    const addFriend = () => {
+        console.log("友達追加しました")
+    }
     return (
 
         <View style={styles.container}>

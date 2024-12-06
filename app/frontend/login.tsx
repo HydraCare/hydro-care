@@ -1,111 +1,193 @@
 import React, { useState } from "react";
 import {
-  StyleSheet,
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  Alert,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Svg, { Path } from "react-native-svg";
 
-interface LoginProps {
-  toggleDarkMode: () => void;
-  onLogin: (email: string, password: string) => void;
-}
 
-export default function Login({ toggleDarkMode, onLogin }: LoginProps) {
+const { width } = Dimensions.get("window");
+const Login: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = () => {
-    setError("");
+  // Danh sách tài khoản ảo
+  const accounts = [
+    { email: "user@gmail.com", password: "1" },
+    { email: "user2@gmail.com", password: "password2" },
+    { email: "user3@gmail.com", password: "password3" },
+  ];
 
-    if (!email || !password) {
-      setError("Please fill in all fields");
-      return;
+  // Hàm xử lý đăng nhập
+  const handleLogin = () => {
+    const account = accounts.find(
+      (account) => account.email === email && account.password === password
+    );
+
+    if (account) {
+      console.log("login Success")
+      onLoginSuccess();
+    } else {
+      Alert.alert("Invalid credentials", "Username or password is incorrect");
     }
-
-    onLogin(email, password);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
-      <View style={styles.formContainer}>
+
+      {/* Input email */}
+      <View style={styles.inputContainer}>
+        <Ionicons name="person-outline" size={24} color="black" />
         <TextInput
           style={styles.input}
-          placeholder="Enter your email"
-          placeholderTextColor="#666"
+          placeholder="sample@gmail.com"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
+          autoCapitalize="none"
         />
+        <Ionicons
+          name={email ? "checkmark-circle" : "ellipse-outline"}
+          size={24}
+          color={email ? "green" : "gray"}
+        />
+      </View>
+
+      {/* Input password */}
+      <View style={styles.inputContainer}>
+        <Ionicons name="lock-closed-outline" size={24} color="black" />
         <TextInput
           style={styles.input}
-          placeholder="Enter your password"
-          placeholderTextColor="#666"
+          placeholder="パスワード"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
         />
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons
+            name={showPassword ? "eye" : "eye-off"}
+            size={24}
+            color="gray"
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Login button */}
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+        <Text style={styles.loginButtonText}>ログイン</Text>
+      </TouchableOpacity>
+
+      {/* Forget password link */}
+      {/* <TouchableOpacity onPress={() => navigation.navigate("ResetPassword")}> */}
+      <TouchableOpacity>
+        <Text style={styles.forgotPasswordText}>パスワードをお忘れの方</Text>
+      </TouchableOpacity>
+
+      {/* SVG for design */}
+      <View style={styles.waveContainer}>
+        <Svg
+          height="100%"
+          width={width}
+          viewBox="0 0 1440 320"
+          preserveAspectRatio="none"
+        >
+          <Path
+            fill="#ffffff"
+            fillOpacity="1"
+            d="M0,224L48,197.3C96,171,192,117,288,122.7C384,128,480,192,576,192C672,192,768,128,864,122.7C960,117,1056,171,1152,213.3C1248,256,1344,288,1392,304L1440,320L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+          />
+        </Svg>
+      </View>
+
+      {/* Register link */}
+      <View style={styles.registerContainer}>
+        <Text style={styles.registerText}>アカウントをお持ちでない方は </Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+          <Text style={styles.registerLink}>新規登録</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#a2d9ff",
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#f9f9f9",
+    paddingBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 35,
     fontWeight: "bold",
-    marginBottom: 16,
-    color: "#000",
+    marginBottom: 20,
+    color: "#333",
   },
-  formContainer: {
-    width: "100%",
-    maxWidth: 400,
-    padding: 16,
-    borderRadius: 12,
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginVertical: 10,
+    width: width * 0.8,
     shadowColor: "#000",
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowRadius: 5,
     elevation: 5,
-    backgroundColor: "#fff",
   },
   input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: "#fff",
-    color: "#000",
+    flex: 1,
+    paddingHorizontal: 10,
+    color: "#999fa1",
   },
-  button: {
-    backgroundColor: "#007bff",
-    padding: 12,
-    borderRadius: 8,
+  loginButton: {
+    backgroundColor: "#4A90E2",
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    marginTop: 20,
+    width: width * 0.8,
     alignItems: "center",
-    marginTop: 12,
   },
-  buttonText: {
+  loginButtonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 18,
   },
-  errorText: {
-    color: "red",
-    marginBottom: 12,
+  forgotPasswordText: {
+    color: "#4A90E2",
+    marginTop: 10,
+  },
+  waveContainer: {
+    width: "100%",
+    height: 200,
+    marginTop: 20,
+  },
+  registerContainer: {
+    position: "absolute",
+    bottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  registerText: {
+    color: "#333",
+    fontSize: 15
+  },
+  registerLink: {
+    color: "#4A90E2",
+    fontWeight: "bold",
+    fontSize: 15
   },
 });
+
+export default Login;

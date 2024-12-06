@@ -4,7 +4,10 @@ import AddFriend from './addfriend';
 import Header from '../header';
 import Setting from './setting';
 import Profile from './profile';
-const Friend: React.FC<{ onNavigate: () => void }> = ({ onNavigate }) => {
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import PublicProfile from './public_profile';
+// const Friend : React.FC<{ onNavigate: () => void }> = ({ onNavigate }) => {
+const Friend = ({ navigation }: any) => {
     const [follow] = useState([
         { Name: 'tomo-tin', id: '1001', water: '2500 ', image: require('@/assets/images/image.jpg') },
         { Name: 'Trang', id: '1002', water: '2600 ', image: require('@/assets/images/dittrau.png') },
@@ -14,37 +17,38 @@ const Friend: React.FC<{ onNavigate: () => void }> = ({ onNavigate }) => {
     return (
         <View style={styles.container}>
             <Header title="共有中" />
-            <ScrollView>
-                <View style={styles.homeContainer}>
-                    <TouchableOpacity style={styles.button} onPress={onNavigate}>
-                        <Text style={styles.buttonText}>IDで追加する</Text>
-                    </TouchableOpacity>
-                </View>
-                <View>
-                    <Text style={styles.textContainer}>フォロー中</Text>
-                </View>
-                <ScrollView style={styles.logsContainer}>
-                    {follow.map((log, index) => (
-                        <View key={index} style={styles.logItem}>
-                            <View>
-                                <Image source={log.image} style={styles.icon} />
-                            </View>
-                            <View>
-                                <View>
-                                    <Text>Name : {log.Name} </Text>
-                                </View>
-                                <View>
-                                    <Text>毎日の目標 : {log.water} ㎖</Text>
-                                </View>
-                            </View>
 
+            <View style={styles.homeContainer}>
+                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AddFriend')}>
+                    <Text style={styles.buttonText}>IDで追加する</Text>
+                </TouchableOpacity>
+            </View>
+            <View>
+                <Text style={styles.textContainer}>フォロー中</Text>
+            </View>
+            <ScrollView style={styles.logsContainer}>
+                {follow.map((log, index) => (
+                    <TouchableOpacity key={index} style={styles.logItem} onPress={() => navigation.navigate('PublicProfile')}>
+                        <View>
+                            <Image source={log.image} style={styles.icon} />
                         </View>
-                    ))}
-                </ScrollView>
+                        <View>
+                            <View>
+                                <Text>Name : {log.Name} </Text>
+                            </View>
+                            <View>
+                                <Text>毎日の目標 : {log.water} ㎖</Text>
+                            </View>
+                        </View>
+
+                    </TouchableOpacity>
+                ))}
             </ScrollView>
         </View>
     );
 };
+
+const Stack = createNativeStackNavigator();
 const App: React.FC = () => {
     const [currentScreen, setCurrentScreen] = useState('Friend'); // Trạng thái màn hình hiện tại
 
@@ -58,17 +62,22 @@ const App: React.FC = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <Stack.Navigator initialRouteName="Friend" screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Friend" component={Friend} />
+            <Stack.Screen name="AddFriend" component={AddFriend} />
+            <Stack.Screen name="PublicProfile" component={PublicProfile} />
+        </Stack.Navigator>
+        // <View style={styles.container}>
 
-            {/* Điều hướng hiển thị màn hình Friend và AddFriend */}
-            {currentScreen === 'Friend' ? (
-                <Friend onNavigate={navigateToAddFriend} />
-            ) : (
-                <AddFriend onGoBack={goBackToFriend} />
-            )}
+        //     {/* Điều hướng hiển thị màn hình Friend và AddFriend */}
+        //     {currentScreen === 'Friend' ? (
+        //         <Friend onNavigate={navigateToAddFriend} />
+        //     ) : (
+        //         <AddFriend onGoBack={goBackToFriend} />
+        //     )}
 
 
-        </View>
+        // </View>
     );
 };
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Image, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import WaterIntake from "./frontend/water_intake"; // water Tab Component
@@ -7,9 +7,14 @@ import History from "./frontend/history";
 import Friend from "./frontend/friend";
 import Challenge from "./frontend/challenge";
 import Login from "./frontend/login";
+import test2 from "./frontend/test";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { NavigationContainer } from "@react-navigation/native";
+import Register from "./frontend/sign_up"
+import App from "./frontend/bluetooth";
 
+const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-
 const TabIcon = ({
   focused,
   source,
@@ -21,15 +26,14 @@ const TabIcon = ({
 }) => (
   <Image
     source={focused ? sourceFocused : source}
-    style={styles.icon} // Sử dụng style icon để căn giữa
+    style={styles.icon}
   />
 );
-
-export default function Index() {
+const TabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarStyle: styles.tabBar, // Cập nhật tabBarStyle
+        tabBarStyle: styles.tabBar,
       }}
     >
       <Tab.Screen
@@ -109,6 +113,30 @@ export default function Index() {
       />
     </Tab.Navigator>
   );
+}
+export default function Index() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false); //login の状態確認
+
+  //login 成功場合
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
+  return (
+
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isLoggedIn ? (
+        <Stack.Screen name="Login">
+          {(props) => <Login {...props} onLoginSuccess={handleLoginSuccess} />}
+        </Stack.Screen>
+      ) : (
+        // Nếu đã đăng nhập, chuyển đến màn hình chính chứa các tab
+        <Stack.Screen name="Home" component={TabNavigator} />
+      )}
+      {/* <Stack.Screen name="Register" component={Register} /> */}
+    </Stack.Navigator>
+
+  );
+
 }
 
 const styles = StyleSheet.create({

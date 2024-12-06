@@ -14,11 +14,7 @@ import Svg, { Path } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
 
-type LoginScreenProps = {
-    //   navigation: NativeStackNavigationProp<RootStackParamList, "Login">;
-};
-
-const LoginScreen: React.FC<LoginScreenProps> = ({ }) => {
+const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -83,10 +79,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ }) => {
                     />
                 </TouchableOpacity>
             </View>
-
             {/* 登録ボタン */}
             <TouchableOpacity style={styles.loginButton}>
                 <Text style={styles.loginButtonText}>アカウントを作成</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+                <Text style={styles.registerText}>既にアカウントをお持ちですか？</Text>
             </TouchableOpacity>
 
             {/* パスワードを忘れた場合 */}
@@ -123,10 +121,10 @@ const styles = StyleSheet.create({
     },
     // 新規登録(テキスト)
     title: {
-        fontSize: 32,
+        fontSize: 35,
         fontWeight: "bold",
         marginBottom: 20,
-        color: "#fff",
+        color: "#333",
     },
     inputContainer: {
         flexDirection: "row",
@@ -183,6 +181,8 @@ const styles = StyleSheet.create({
     // アカウントをお持ちでない方は(テキスト)
     registerText: {
         color: "#333",
+        fontWeight: 'bold',
+        padding: 10
     },
     // 新規登録リンク
     registerLink: {
@@ -191,4 +191,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default LoginScreen;
+export default Register;

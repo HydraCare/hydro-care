@@ -80,17 +80,12 @@ const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) =>
                 </TouchableOpacity>
             </View>
             {/* 登録ボタン */}
-            <TouchableOpacity style={styles.loginButton}>
+            <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate("Sign_up_info")}>
                 <Text style={styles.loginButtonText}>アカウントを作成</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate("Login")}>
                 <Text style={styles.registerText}>既にアカウントをお持ちですか？</Text>
             </TouchableOpacity>
-
-            {/* パスワードを忘れた場合 */}
-            {/* <TouchableOpacity onPress={() => navigation.navigate("ResetPassword")}>
-        <Text style={styles.forgotPasswordText}>アカウントをお持ちの方</Text>
-      </TouchableOpacity> */}
 
             {/* SVG波のデザインを「パスワードをお忘れの方」のリンクの下に配置 */}
             <View style={styles.waveContainer}>

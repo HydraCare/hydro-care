@@ -12,6 +12,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
 import Register from "./frontend/sign_up"
 import App from "./frontend/bluetooth";
+import Sign_up_info from "./frontend/sign_up_info";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -122,19 +123,21 @@ export default function Index() {
     setIsLoggedIn(true);
   };
   return (
-
     <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {/* Nếu chưa đăng nhập, hiển thị màn hình Login */}
       {!isLoggedIn ? (
         <Stack.Screen name="Login">
           {(props) => <Login {...props} onLoginSuccess={handleLoginSuccess} />}
         </Stack.Screen>
       ) : (
-        // Nếu đã đăng nhập, chuyển đến màn hình chính chứa các tab
+        // Sau khi đăng nhập thành công, hiển thị Home
         <Stack.Screen name="Home" component={TabNavigator} />
       )}
-      {/* <Stack.Screen name="Register" component={Register} /> */}
-    </Stack.Navigator>
 
+      <Stack.Screen name="Register">
+        {(props) => <Register {...props} onLoginSuccess={handleLoginSuccess} />}
+      </Stack.Screen>
+    </Stack.Navigator>
   );
 
 }

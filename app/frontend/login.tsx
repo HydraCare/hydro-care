@@ -7,35 +7,37 @@ import {
   StyleSheet,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { auth } from './firebase';  // Import Firebase auth
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import Svg, { Path } from "react-native-svg";
 
-
 const { width } = Dimensions.get("window");
+
 const Login: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  // Danh sách tài khoản ảo
-  const accounts = [
-    { email: "user@gmail.com", password: "1" },
-    { email: "user2@gmail.com", password: "password2" },
-    { email: "user3@gmail.com", password: "password3" },
-  ];
-
-  // Hàm xử lý đăng nhập
-  const handleLogin = () => {
-    const account = accounts.find(
-      (account) => account.email === email && account.password === password
-    );
-
-    if (account) {
-      console.log("login Success")
-      onLoginSuccess();
-    } else {
-      Alert.alert("Invalid credentials", "Username or password is incorrect");
+  const [isLoading, setIsLoading] = useState(false); //  loading
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      console.log("Login Success", user);
+      onLoginSuccess(); // Trigger the onLoginSuccess callback
+      setIsLoading(false);
+    } catch (error: any) {
+      setIsLoading(false);
+      if (error.code === 'auth/user-not-found') {
+        Alert.alert("Error", "No user found with this email.");
+      } else if (error.code === 'auth/wrong-password') {
+        Alert.alert("Error", "Wrong password. Please try again.");
+      } else {
+        Alert.alert("Error", error.message);
+      }
     }
   };
 
@@ -43,7 +45,7 @@ const Login: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) => {
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
 
-      {/* Input email */}
+      {/* Email input */}
       <View style={styles.inputContainer}>
         <Ionicons name="person-outline" size={24} color="black" />
         <TextInput
@@ -61,12 +63,12 @@ const Login: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) => {
         />
       </View>
 
-      {/* Input password */}
+      {/* Password input */}
       <View style={styles.inputContainer}>
         <Ionicons name="lock-closed-outline" size={24} color="black" />
         <TextInput
           style={styles.input}
-          placeholder="パスワード"
+          placeholder="Password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
@@ -82,23 +84,21 @@ const Login: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) => {
 
       {/* Login button */}
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginButtonText}>ログイン</Text>
+        <Text style={styles.loginButtonText}>Login</Text>
       </TouchableOpacity>
-
-      {/* Forget password link */}
-      {/* <TouchableOpacity onPress={() => navigation.navigate("ResetPassword")}> */}
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+        </View>
+      )}
+      {/* Forgot password link */}
       <TouchableOpacity>
         <Text style={styles.forgotPasswordText}>パスワードをお忘れの方</Text>
       </TouchableOpacity>
 
-      {/* SVG for design */}
+      {/* SVG design */}
       <View style={styles.waveContainer}>
-        <Svg
-          height="100%"
-          width={width}
-          viewBox="0 0 1440 320"
-          preserveAspectRatio="none"
-        >
+        <Svg height="100%" width={width} viewBox="0 0 1440 320" preserveAspectRatio="none">
           <Path
             fill="#ffffff"
             fillOpacity="1"
@@ -162,10 +162,11 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 20
   },
   forgotPasswordText: {
-    color: "#4A90E2",
+    color: "black",
+    fontWeight: "bold",
     marginTop: 10,
   },
   waveContainer: {
@@ -181,13 +182,17 @@ const styles = StyleSheet.create({
   },
   registerText: {
     color: "#333",
-    fontSize: 15
+    fontWeight: "bold",
+    fontSize: 15,
   },
   registerLink: {
     color: "#4A90E2",
     fontWeight: "bold",
-    fontSize: 15
+    fontSize: 15,
   },
+  loadingContainer: {
+    margin: 20,
+  }
 });
 
 export default Login;

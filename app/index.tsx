@@ -130,12 +130,15 @@ export default function Index() {
           {(props) => <Login {...props} onLoginSuccess={handleLoginSuccess} />}
         </Stack.Screen>
       ) : (
-        // Sau khi đăng nhập thành công, hiển thị Home
+        //login 成功したら
         <Stack.Screen name="Home" component={TabNavigator} />
       )}
 
       <Stack.Screen name="Register">
         {(props) => <Register {...props} onLoginSuccess={handleLoginSuccess} />}
+      </Stack.Screen>
+      <Stack.Screen name="Sign_up_info" component={Sign_up_info}>
+
       </Stack.Screen>
     </Stack.Navigator>
   );

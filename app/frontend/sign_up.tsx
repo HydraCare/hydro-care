@@ -6,22 +6,57 @@ import {
     TouchableOpacity,
     StyleSheet,
     Dimensions,
+    Alert,
+    ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-// import { RootStackParamList } from "./types"; //
 import Svg, { Path } from "react-native-svg";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, firestore } from "./firebase"; // Ensure this is correctly imported
+import { doc, setDoc } from "firebase/firestore"; // Use Firestore for saving user data
 
 const { width } = Dimensions.get("window");
 
 const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState(""); // Added confirm password field
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); //  loading
+    const registerNewUser = async () => {
+        if (password !== confirmPassword) {
+            // Check if passwords match
+            Alert.alert("Error", "Passwords do not match!");
+            return;
+        }
+        try {
+            setIsLoading(true);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            const userId = user.uid; // Automatically generated ID
+
+            // Store user data in Firestore
+            await setDoc(doc(firestore, "users/" + userId), {
+                email: email,
+                password: password,
+                createdAt: new Date(),
+            });
+
+            console.log("User created successfully with ID:", userId);
+            onLoginSuccess();
+            setIsLoading(false);
+            console.log("情報入力 TAB 移動")
+            navigation.navigate("Sign_up_info", { userId });
+        } catch (error) {
+            setIsLoading(false);
+            Alert.alert("エラー", "既にユーザー登録されています！！");
+            console.error("Error creating user:");
+        }
+    };
 
     return (
         <View style={styles.container}>
-            {/* タイトル */}
             <Text style={styles.title}>新規登録</Text>
 
             {/* メールアドレス入力フィールド */}
@@ -35,11 +70,7 @@ const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) =>
                     keyboardType="email-address"
                     autoCapitalize="none"
                 />
-                <Ionicons
-                    name={email ? "checkmark-circle" : "ellipse-outline"}
-                    size={24}
-                    color={email ? "green" : "gray"}
-                />
+                <Ionicons name={email ? "checkmark-circle" : "ellipse-outline"} size={24} color={email ? "green" : "gray"} />
             </View>
 
             {/* パスワード入力フィールド */}
@@ -53,11 +84,7 @@ const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) =>
                     secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                    <Ionicons
-                        name={showPassword ? "eye" : "eye-off"}
-                        size={24}
-                        color="gray"
-                    />
+                    <Ionicons name={showPassword ? "eye" : "eye-off"} size={24} color="gray" />
                 </TouchableOpacity>
             </View>
 
@@ -67,34 +94,32 @@ const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) =>
                 <TextInput
                     style={styles.input}
                     placeholder="パスワード確認"
-                    value={password}
-                    onChangeText={setPassword}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
                     secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                    <Ionicons
-                        name={showPassword ? "eye" : "eye-off"}
-                        size={24}
-                        color="gray"
-                    />
+                    <Ionicons name={showPassword ? "eye" : "eye-off"} size={24} color="gray" />
                 </TouchableOpacity>
             </View>
+
             {/* 登録ボタン */}
-            <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate("Sign_up_info")}>
+            <TouchableOpacity style={styles.loginButton} onPress={registerNewUser}>
                 <Text style={styles.loginButtonText}>アカウントを作成</Text>
             </TouchableOpacity>
+            {isLoading && (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4A90E2" />
+                </View>
+            )}
+            {/* 既にアカウントをお持ちの方 */}
             <TouchableOpacity onPress={() => navigation.navigate("Login")}>
                 <Text style={styles.registerText}>既にアカウントをお持ちですか？</Text>
             </TouchableOpacity>
 
-            {/* SVG波のデザインを「パスワードをお忘れの方」のリンクの下に配置 */}
+            {/* SVG波のデザイン */}
             <View style={styles.waveContainer}>
-                <Svg
-                    height="100%"
-                    width={width}
-                    viewBox="0 0 1440 320"
-                    preserveAspectRatio="none" // レスポンシブ対応
-                >
+                <Svg height="100%" width={width} viewBox="0 0 1440 320" preserveAspectRatio="none">
                     <Path
                         fill="#ffffff"
                         fillOpacity="1"
@@ -109,12 +134,11 @@ const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) =>
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#a2d9ff", // 上部の背景色を水色に変更
+        backgroundColor: "#a2d9ff",
         justifyContent: "center",
         alignItems: "center",
         paddingBottom: 20,
     },
-    // 新規登録(テキスト)
     title: {
         fontSize: 35,
         fontWeight: "bold",
@@ -135,13 +159,11 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 5,
     },
-    // プレースホルダ
     input: {
         flex: 1,
         paddingHorizontal: 10,
         color: "#999fa1",
     },
-    // ログインボタン
     loginButton: {
         backgroundColor: "#4A90E2",
         paddingVertical: 15,
@@ -151,39 +173,23 @@ const styles = StyleSheet.create({
         width: width * 0.8,
         alignItems: "center",
     },
-    // ログインボタンのテキスト
     loginButtonText: {
         color: "#fff",
         fontSize: 18,
     },
-    // パスワードをお忘れの方(テキスト)
-    forgotPasswordText: {
-        color: "#4A90E2",
-        marginTop: 10,
-    },
-    // 波SVG
-    waveContainer: {
-        width: "100%",
-        height: 200, // 波の高さを調整
-        marginTop: 20, // 「パスワードをお忘れの方」リンクの下に配置
-    },
-    registerContainer: {
-        position: "absolute",
-        bottom: 20,
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    // アカウントをお持ちでない方は(テキスト)
     registerText: {
         color: "#333",
-        fontWeight: 'bold',
-        padding: 10
-    },
-    // 新規登録リンク
-    registerLink: {
-        color: "#4A90E2",
         fontWeight: "bold",
+        padding: 10,
     },
+    waveContainer: {
+        width: "100%",
+        height: 200,
+        marginTop: 20,
+    },
+    loadingContainer: {
+        margin: 20,
+    }
 });
 
 export default Register;

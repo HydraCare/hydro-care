@@ -124,21 +124,19 @@ export default function Index() {
   };
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {/* Nếu chưa đăng nhập, hiển thị màn hình Login */}
       {!isLoggedIn ? (
         <Stack.Screen name="Login">
           {(props) => <Login {...props} onLoginSuccess={handleLoginSuccess} />}
         </Stack.Screen>
       ) : (
         //login 成功したら
-        <Stack.Screen name="Home" component={TabNavigator} />
+        <Stack.Screen name="Tab" component={TabNavigator} />
       )}
 
       <Stack.Screen name="Register">
         {(props) => <Register {...props} onLoginSuccess={handleLoginSuccess} />}
       </Stack.Screen>
       <Stack.Screen name="Sign_up_info" component={Sign_up_info}>
-
       </Stack.Screen>
     </Stack.Navigator>
   );

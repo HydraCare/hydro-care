@@ -14,7 +14,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Svg, { Path } from "react-native-svg";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, firestore } from "./firebase"; // Ensure this is correctly imported
-import { doc, setDoc } from "firebase/firestore"; // Use Firestore for saving user data
+import { doc, setDoc, Timestamp } from "firebase/firestore"; // Use Firestore for saving user data
 
 const { width } = Dimensions.get("window");
 
@@ -24,6 +24,7 @@ const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) =>
     const [confirmPassword, setConfirmPassword] = useState(""); // Added confirm password field
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false); //  loading
+
     const registerNewUser = async () => {
         if (password !== confirmPassword) {
             // Check if passwords match
@@ -35,12 +36,14 @@ const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) =>
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
             const userId = user.uid; // Automatically generated ID
-
+            const createdAt = Timestamp.fromDate(new Date());
+            const loginCount = 0; //login日数
             // Store user data in Firestore
             await setDoc(doc(firestore, "users/" + userId), {
                 email: email,
                 password: password,
-                createdAt: new Date(),
+                createdAt: createdAt,
+                loginCount: loginCount,
             });
 
             console.log("User created successfully with ID:", userId);

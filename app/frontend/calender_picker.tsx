@@ -20,21 +20,21 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({ onDateChange }) => {
     };
 
     const handleConfirm = (selectedDate: Date) => {
-        const formattedDate = format(selectedDate, 'yyyy-MM-dd HH:mm'); // Định dạng ngày giờ
+        const formattedDate = format(selectedDate, 'yyyy-MM-dd HH:mm');
         setDate(formattedDate);
-        onDateChange(formattedDate); // Gọi hàm khi ngày thay đổi
+        onDateChange(formattedDate);
         hideDatePicker();
     };
 
     return (
         <View>
             <Text onPress={showDatePicker} style={styles.dateText}>
-                {date || 'Chọn ngày và giờ'}
+                {date || 'select time '}
             </Text>
 
             <DateTimePickerModal
                 isVisible={isDatePickerVisible}
-                mode="datetime" // Chế độ chọn ngày giờ
+                mode="datetime"
                 onConfirm={handleConfirm}
                 onCancel={hideDatePicker}
             />

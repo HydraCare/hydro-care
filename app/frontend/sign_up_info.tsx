@@ -25,6 +25,7 @@ const Sign_up_info = ({ navigation }: any) => {
         setIsLoading(true);
         if (!userId) {
             Alert.alert("Error", "User is not logged in.");
+            navigation.navigate("Login")
             return;
         }
         const db = getFirestore();

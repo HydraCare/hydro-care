@@ -1,6 +1,10 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState,useEffect } from 'react';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity,Alert } from 'react-native';
 import Header from '../header';
+import { getFirestore, doc, getDoc } from 'firebase/firestore'; 
+import { getAuth, } from 'firebase/auth';
+
+
 
 const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
 
@@ -9,12 +13,54 @@ const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
         onGoBack()
     }
 
+    const [loading, setLoading] = useState(true);
+    const [profile, setProfile] = useState({
+                name: '',
+                id: '',
+                waterGoal: 0,
+              });
+    
+              useEffect(() => {
+                const fetchProfile = async () => {
+                  try {
+                    const auth = getAuth();
+                    const user = auth.currentUser;
+                    if (!user || !user.uid) {
+                        console.error('ログイン中のユーザーがいません');
+                        return null;
+                    }
+                    const firestore = getFirestore(); // Firestoreのインスタンスを取得
+                    const userId = user?.uid; // ログイン中のユーザーIDを取得する必要あり
+                    const profileRef = doc(firestore, 'users', userId);
+                    const profileSnap = await getDoc(profileRef);
+            
+                    if (profileSnap.exists()) {
+                      const data = profileSnap.data();
+                      setProfile({
+                        name: data.name || '',
+                        id: profileSnap.id || '',
+                        waterGoal: data.waterGoal || 0,
+                      });
+                    } else {
+                      Alert.alert('エラー', 'プロフィール情報が見つかりません');
+                    }
+                  } catch (error) {
+                    console.error('プロフィール取得エラー:', error);
+                    Alert.alert('エラー', 'プロフィール情報を取得できませんでした');
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+            
+                fetchProfile();
+              }, []);
+
     return (
         <View style={styles.container}>
             <Header title="プロフィール" back='Back' onBackPress={handleBack} />
             <ScrollView style={styles.scrollContainer}>
                 {/* Profile Section */}
-                <View style={styles.profileSection}>
+                {/* <View style={styles.profileSection}>
                     <Image
                         source={require('@/assets/images/dittrau.png')}
                         style={styles.icon}
@@ -23,7 +69,7 @@ const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
                         <Text style={styles.profileText}>Name</Text>
                     </View>
                     <Image source={require('@/assets/images/angle-right.png')} style={styles.angle_right} />
-                </View>
+                </View> */}
 
                 {/* 自分の紹介 Section */}
                 <View style={styles.section}>
@@ -34,22 +80,18 @@ const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>ID:</Text>
-                        <Text style={styles.infoText}>ABT12345</Text>
-                    </View>
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>性別:</Text>
-                        <Text style={styles.infoText}>男性</Text>
-                    </View>
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>生年月日:</Text>
-                        <Text style={styles.infoText}>1990/01/01</Text>
-                    </View>
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>趣味:</Text>
-                        <Text style={styles.infoText}>読書</Text>
-                    </View>
+                    {loading ? (
+                        <Text>プロフィールを読み込んでいます...</Text>
+                    ) : (
+                        <>
+                        <Image source={require('@/assets/images/dittrau.png')} style={styles.icon} />
+                        <View style={styles.profileDetails}>
+                        <Text style={styles.profileText}>{`名前: ${profile.name}`}</Text>
+                        <Text style={styles.profileText}>{`ID: ${profile.id}`}</Text>
+                        <Text style={styles.profileText}>{`毎日の目標: ${profile.waterGoal}ml`}</Text>
+                        </View>
+                        </>
+                    )}
                 </View>
 
                 {/* 毎日の目標 Section */}

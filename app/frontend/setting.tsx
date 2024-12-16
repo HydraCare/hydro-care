@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, Image, Switch, TouchableOpacity, StyleSheet, TouchableNativeFeedback, TouchableHighlight } from 'react-native';
+import React, { useState,useEffect } from 'react';
+import { View, Text, Image, Switch, TouchableOpacity, StyleSheet, TouchableNativeFeedback, TouchableHighlight,Alert } from 'react-native';
 import Header from '../header';
 import Profile from './profile';
 import { useNavigation } from 'expo-router';
 import ChangePassword  from './change_email_password'; // 適切なファイルパスに変更
+import { getFirestore, doc, getDoc } from 'firebase/firestore'; 
+import { getAuth, } from 'firebase/auth';
 
 
 
@@ -15,6 +17,48 @@ const Setting: React.FC<{
         const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
         const toggleNotification = () => setIsNotificationEnabled(!isNotificationEnabled);
 
+        const [loading, setLoading] = useState(true);
+        const [profile, setProfile] = useState({
+            name: '',
+            id: '',
+            waterGoal: 0,
+          });
+
+          useEffect(() => {
+            const fetchProfile = async () => {
+              try {
+                const auth = getAuth();
+                const user = auth.currentUser;
+                if (!user || !user.uid) {
+                    console.error('ログイン中のユーザーがいません');
+                    return null;
+                }
+                const firestore = getFirestore(); // Firestoreのインスタンスを取得
+                const userId = user?.uid; // ログイン中のユーザーIDを取得する必要あり
+                const profileRef = doc(firestore, 'users', userId);
+                const profileSnap = await getDoc(profileRef);
+        
+                if (profileSnap.exists()) {
+                  const data = profileSnap.data();
+                  setProfile({
+                    name: data.name || '',
+                    id: profileSnap.id || '',
+                    waterGoal: data.waterGoal || 0,
+                  });
+                } else {
+                  Alert.alert('エラー', 'プロフィール情報が見つかりません');
+                }
+              } catch (error) {
+                console.error('プロフィール取得エラー:', error);
+                Alert.alert('エラー', 'プロフィール情報を取得できませんでした');
+              } finally {
+                setLoading(false);
+              }
+            };
+        
+            fetchProfile();
+          }, []);
+        
     const [isWaterAlertEnabled, setIsWaterAlertEnabled] = useState(false);
     const [isDrinkingAlertEnabled, setIsDrinkingAlertEnabled] = useState(false);
 
@@ -35,12 +79,19 @@ const Setting: React.FC<{
                     <Text style={styles.buttonText}>IDで追加する</Text>
                 </TouchableOpacity> */}
                 <View style={styles.profileSection}>
+                {loading ? (
+                    <Text>プロフィールを読み込んでいます...</Text>
+                ) : (
+                    <>
                     <Image source={require('@/assets/images/dittrau.png')} style={styles.icon} />
                     <View style={styles.profileDetails}>
-                        <Text style={styles.profileText}>Name</Text>
-                        <Text style={styles.profileText}>ID: ABT12345</Text>
-                        <Text style={styles.profileText}>毎日の目標: 2000ml</Text>
+                    <Text style={styles.profileText}>{`名前: ${profile.name}`}</Text>
+                    <Text style={styles.profileText}>{`ID: ${profile.id}`}</Text>
+                    <Text style={styles.profileText}>{`毎日の目標: ${profile.waterGoal}ml`}</Text>
                     </View>
+                    </>
+                )}
+
                 </View>
             </TouchableOpacity>
             {/* Notification Settings Section */}
@@ -118,6 +169,7 @@ const SettingApp: React.FC = () => {
         </View>
     );
 };
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,

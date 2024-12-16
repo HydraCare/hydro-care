@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '../header';
 import bluetooth from './bluetooth';
 import CalendarPicker from './calender_picker';
-import Icon from 'react-native-vector-icons/FontAwesome';
+// import Icon from 'react-native-vector-icons/FontAwesome';
 import BluetoothModal from './bluetooth';
 
 const Water_Intake = () => {
@@ -12,6 +12,7 @@ const Water_Intake = () => {
     const [amount, setAmount] = useState(0); // Lượng nước đã uống
     const [remaining, setRemaining] = useState(dailyGoal); // Lượng nước còn lại
     const [waterLevel, setWaterLevel] = useState(new Animated.Value(0)); // Animated value cho mức nước
+    
 
     const addWater = (amountToAdd: number) => {
         const newAmount = amount + amountToAdd;

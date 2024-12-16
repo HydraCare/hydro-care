@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { format } from 'date-fns';
+// import DateTimePickerModal from "react-native-modal-datetime-picker";
+// import { format } from 'date-fns';
 
 type CalendarPickerProps = {
     onDateChange: (date: string) => void; // Hàm gọi lại khi ngày giờ thay đổi
@@ -20,9 +20,9 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({ onDateChange }) => {
     };
 
     const handleConfirm = (selectedDate: Date) => {
-        const formattedDate = format(selectedDate, 'yyyy-MM-dd HH:mm'); // Định dạng ngày giờ
-        setDate(formattedDate);
-        onDateChange(formattedDate); // Gọi hàm khi ngày thay đổi
+        // const formattedDate = format(selectedDate, 'yyyy-MM-dd HH:mm'); // Định dạng ngày giờ
+        // setDate(formattedDate);
+        // onDateChange(formattedDate); // Gọi hàm khi ngày thay đổi
         hideDatePicker();
     };
 
@@ -32,12 +32,12 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({ onDateChange }) => {
                 {date || 'Chọn ngày và giờ'}
             </Text>
 
-            <DateTimePickerModal
+            {/* <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="datetime" // Chế độ chọn ngày giờ
                 onConfirm={handleConfirm}
                 onCancel={hideDatePicker}
-            />
+            /> */}
         </View>
     );
 };

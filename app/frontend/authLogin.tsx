@@ -21,3 +21,4 @@ export const AuthProvider: React.FC = ({ }) => {
         </AuthContext.Provider>
     );
 };
+export default AuthProvider;

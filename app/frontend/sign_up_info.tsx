@@ -1,36 +1,90 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import Header from '../header';
-
-const Sign_up_info: React.FC = () => {
+import { getAuth } from 'firebase/auth';
+import { ref, set } from 'firebase/database';
+import { database, firestore } from './firebase';
+import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore';
+const Sign_up_info = ({ navigation }: any) => {
+    const [userId, setUserId] = useState(""); // State for user ID
     const [currentPage, setCurrentPage] = useState(0);
     const [name, setName] = useState('');
     const [gender, setGender] = useState('');
     const [waterGoal, setWaterGoal] = useState('');
+    const [isLoading, setIsLoading] = useState(false); //  loading
+    //firebase 関連コード
+    useEffect(() => {
+
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (user) {
+            setUserId(user.uid); // Save the user ID from Firebase Authentication
+        }
+    }, []);
+    const updateUserData = async () => {
+        setIsLoading(true);
+        if (!userId) {
+            Alert.alert("Error", "User is not logged in.");
+            return;
+        }
+        const db = getFirestore();
+        const userRef = doc(db, "users", userId); // Reference to the user's document in Firestore
+        try {
+            // Update the user data
+            await updateDoc(userRef, {
+                name: name,
+                gender: gender,
+                createdAt: new Date().toString(),
+                waterGoal: waterGoal,
+            });
+            const updatedUserDoc = await getDoc(userRef);
+            if (updatedUserDoc.exists()) {
+                const updatedUserData = [
+                    { name: updatedUserDoc.data().name },
+                    { gender: updatedUserDoc.data().gender },
+                    { createdAt: updatedUserDoc.data().createdAt },
+                    { waterGoal: updatedUserDoc.data().waterGoal }
+                ];
+                console.log("User data updated successfully:", updatedUserData);
+
+                navigation.navigate("Home", { userId });
+                setIsLoading(false);
+            }
+            Alert.alert("Success", "User data updated successfully!");
+        } catch (error) {
+            setIsLoading(false);
+            console.error("Error updating user data:",);
+            Alert.alert("Error", "An error occurred while updating user data.");
+        }
+    }
 
     const handleNext = () => {
         if (currentPage === 0) {
             if (name) {
+
                 setCurrentPage(1);
+
             } else {
-                alert('名前を入力してください');
+                Alert.alert('名前を入力してください'); // Please enter a name
             }
         } else if (currentPage === 1) {
             if (gender) {
+
                 setCurrentPage(2);
+
             } else {
-                alert('性別を選択してください');
+                Alert.alert('性別を選択してください'); // Please select gender
             }
         } else if (currentPage === 2) {
             if (waterGoal) {
-
-                alert('登録完了');
+                // Final submission to Firebase and show completion alert
+                Alert.alert('登録完了'); // Registration complete
+                updateUserData();
             } else {
-                alert('1日の水分目標を入力してください');
+                Alert.alert('1日の水分目標を入力してください'); // Please enter a daily water goal
             }
         }
     };
-
     const renderPage = () => {
         if (currentPage === 0) {
             return (
@@ -80,7 +134,13 @@ const Sign_up_info: React.FC = () => {
                     <TouchableOpacity style={styles.button} onPress={handleNext}>
                         <Text style={styles.buttonText}>次へ</Text>
                     </TouchableOpacity>
+                    {isLoading && (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color="#4A90E2" />
+                        </View>
+                    )}
                 </View>
+
             );
         }
     };
@@ -152,6 +212,9 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#333',
     },
+    loadingContainer: {
+        margin: 20,
+    }
 });
 
 export default Sign_up_info;

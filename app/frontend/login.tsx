@@ -10,8 +10,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { auth } from './firebase';  // Import Firebase auth
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from "./firebase"; // Import Firebase auth
+import { signInWithEmailAndPassword } from "firebase/auth";
 import Svg, { Path } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
@@ -24,16 +24,20 @@ const Login: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) => {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       const user = userCredential.user;
       console.log("Login Success", user);
       onLoginSuccess(); // Trigger the onLoginSuccess callback
       setIsLoading(false);
     } catch (error: any) {
       setIsLoading(false);
-      if (error.code === 'auth/user-not-found') {
+      if (error.code === "auth/user-not-found") {
         Alert.alert("Error", "No user found with this email.");
-      } else if (error.code === 'auth/wrong-password') {
+      } else if (error.code === "auth/wrong-password") {
         Alert.alert("Error", "Wrong password. Please try again.");
       } else {
         Alert.alert("Error", error.message);
@@ -98,7 +102,12 @@ const Login: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) => {
 
       {/* SVG design */}
       <View style={styles.waveContainer}>
-        <Svg height="100%" width={width} viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <Svg
+          height="100%"
+          width={width}
+          viewBox="0 0 1440 320"
+          preserveAspectRatio="none"
+        >
           <Path
             fill="#ffffff"
             fillOpacity="1"
@@ -162,7 +171,7 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "#fff",
-    fontSize: 20
+    fontSize: 20,
   },
   forgotPasswordText: {
     color: "black",
@@ -192,7 +201,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     margin: 20,
-  }
+  },
 });
 
 export default Login;

@@ -163,7 +163,7 @@ const Water_Intake = () => {
                         <Text style={styles.buttonText}>Reset</Text>
                     </TouchableOpacity>
 
-                    <Text style={styles.goalText}>ここに通知が流れる </Text>
+                    {/* <Text style={styles.goalText}>ここに通知が流れる </Text> */}
 
 
                     <Text style={styles.progressText}>
@@ -472,5 +472,4 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
 });
-
 export default Water_Intake;

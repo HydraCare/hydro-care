@@ -95,9 +95,10 @@ const WaterIntakeHistory: React.FC = () => {
     };
     // Dữ liệu log nước
     const waterLogs = [
-        { time: '14:00', amount: 400, type: 'お冷' },
-        { time: '16:00', amount: 500, type: 'お冷' },
-        { time: '18:00', amount: 300, type: 'お冷' },
+        { time: '6:00', amount: 1200, type: '' },
+        { time: '12:00', amount: 300, type: '' },
+        { time: '18:00', amount: 200, type: '' },
+        { time: '24:00', amount: 300, type: '' },
     ];
     const dataToDisplay = chartData[activeTab];
 
@@ -156,10 +157,10 @@ const WaterIntakeHistory: React.FC = () => {
             {/* Tổng kết */}
             <View style={styles.summaryContainer}>
                 <Text style={styles.summaryText}>
-                    合計 : {summary[activeTab as 'week' | 'month' | 'year']?.total}ml
+                    合計 2000: {summary[activeTab as 'week' | 'month' | 'year']?.total}ml
                 </Text>
                 <Text style={styles.summaryText}>
-                    平均 : {summary[activeTab as 'week' | 'month' | 'year']?.average}ml
+                    平均 2000: {summary[activeTab as 'week' | 'month' | 'year']?.average}ml
                 </Text>
 
 

@@ -6,15 +6,16 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   Alert,
 } from "react-native";
 import Header from "../header";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import * as ImagePicker from "expo-image-picker";
+import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
   const handleBack = () => {
-    console.log("aa");
     onGoBack();
   };
 
@@ -23,19 +24,28 @@ const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
     name: "",
     id: "",
     waterGoal: 0,
+    imageUrl: "", // プロフィール画像のURL
   });
+  const [badges, setBadges] = useState<string[]>([]);
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newWaterGoal, setNewWaterGoal] = useState("");
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileAndBadges = async () => {
       try {
         const auth = getAuth();
         const user = auth.currentUser;
+
         if (!user || !user.uid) {
           console.error("ログイン中のユーザーがいません");
-          return null;
+          return;
         }
-        const firestore = getFirestore(); // Firestoreのインスタンスを取得
-        const userId = user?.uid; // ログイン中のユーザーIDを取得する必要あり
+
+        const firestore = getFirestore();
+        const userId = user.uid;
         const profileRef = doc(firestore, "users", userId);
         const profileSnap = await getDoc(profileRef);
 
@@ -45,62 +55,143 @@ const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
             name: data.name || "",
             id: profileSnap.id || "",
             waterGoal: data.waterGoal || 0,
+            imageUrl: data.imageUrl || "", // Firestore に保存された画像URL
           });
+          setNewName(data.name || "");
+          setNewWaterGoal(String(data.waterGoal || ""));
+          setBadges(data.badges || []); // Firestore のバッジデータ
         } else {
           Alert.alert("エラー", "プロフィール情報が見つかりません");
         }
       } catch (error) {
-        console.error("プロフィール取得エラー:", error);
+        console.error("プロフィールまたはバッジの取得エラー:", error);
         Alert.alert("エラー", "プロフィール情報を取得できませんでした");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchProfileAndBadges();
   }, []);
+
+  const handleChangeImage = async () => {
+    try {
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert(
+          "権限が必要です",
+          "画像ライブラリへのアクセスを許可してください。"
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const uri = result.assets[0].uri;
+        setProfile((prev) => ({ ...prev, imageUrl: uri }));
+        Alert.alert("成功", "プロフィール画像が変更されました！");
+      }
+    } catch (error) {
+      console.error("画像変更エラー:", error);
+      Alert.alert("エラー", "プロフィール画像を変更できませんでした");
+    }
+  };
+
+  const handleSaveWaterGoal = async () => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const firestore = getFirestore();
+      const profileRef = doc(firestore, "users", user.uid);
+
+      const waterGoal = parseInt(newWaterGoal, 10);
+      await updateDoc(profileRef, { waterGoal });
+      setProfile((prev) => ({ ...prev, waterGoal }));
+      setIsEditingGoal(false);
+      Alert.alert("成功", "毎日の目標が更新されました！");
+    } catch (error) {
+      console.error("目標の更新エラー:", error);
+      Alert.alert("エラー", "毎日の目標を更新できませんでした");
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Header title="プロフィール" back="Back" onBackPress={handleBack} />
       <ScrollView style={styles.scrollContainer}>
-        {/* Profile Section */}
-        {/* <View style={styles.profileSection}>
-                    <Image
-                        source={require('@/assets/images/dittrau.png')}
-                        style={styles.icon}
-                    />
-                    <View style={styles.profileDetails}>
-                        <Text style={styles.profileText}>Name</Text>
-                    </View>
-                    <Image source={require('@/assets/images/angle-right.png')} style={styles.angle_right} />
-                </View> */}
-
         {/* 自分の紹介 Section */}
         <View style={styles.section}>
           <View style={styles.settingItem}>
             <Text style={styles.sectionTitle}>自分の紹介</Text>
-            <TouchableOpacity>
-              <Text>修正</Text>
-            </TouchableOpacity>
           </View>
-
           {loading ? (
             <Text>プロフィールを読み込んでいます...</Text>
           ) : (
             <>
-              <Image
-                source={require("@/assets/images/dittrau.png")}
-                style={styles.icon}
-              />
+              <TouchableOpacity onPress={handleChangeImage}>
+                <Image
+                  source={
+                    profile.imageUrl
+                      ? { uri: profile.imageUrl }
+                      : require("@/assets/images/dittrau.png")
+                  }
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
               <View style={styles.profileDetails}>
-                <Text
-                  style={styles.profileText}
-                >{`名前: ${profile.name}`}</Text>
+                {isEditingName ? (
+                  <View style={styles.editContainer}>
+                    <TextInput
+                      style={styles.input}
+                      value={newName}
+                      onChangeText={setNewName}
+                      placeholder="名前を入力"
+                    />
+                    <View style={styles.buttonRow}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setIsEditingName(false);
+                          setNewName(profile.name);
+                        }}
+                        style={styles.cancelButton}
+                      >
+                        <Text style={styles.buttonText}>キャンセル</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setProfile((prev) => ({ ...prev, name: newName }));
+                          setIsEditingName(false);
+                          Alert.alert("成功", "名前が変更されました！");
+                        }}
+                        style={styles.saveButton}
+                      >
+                        <Text style={styles.buttonText}>保存</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.infoContainer}>
+                    <Text
+                      style={styles.profileText}
+                    >{`名前: ${profile.name}`}</Text>
+                    <TouchableOpacity
+                      onPress={() => setIsEditingName(true)}
+                      style={styles.editButton}
+                    >
+                      <Text style={styles.buttonText}>修正</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
                 <Text style={styles.profileText}>{`ID: ${profile.id}`}</Text>
-                <Text
-                  style={styles.profileText}
-                >{`毎日の目標: ${profile.waterGoal}ml`}</Text>
               </View>
             </>
           )}
@@ -108,26 +199,68 @@ const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
 
         {/* 毎日の目標 Section */}
         <View style={styles.section}>
-          <View style={styles.settingItem}>
-            <Text style={styles.sectionTitle}>毎日の目標:</Text>
-            <TouchableOpacity>
-              <Text>修正</Text>
-            </TouchableOpacity>
-          </View>
-          <Image
-            source={require("@/assets/images/water.png")} // Chỉnh đường dẫn hình ảnh nếu cần
-            style={styles.goalIcon}
-          />
+          <Text style={styles.sectionTitle}>毎日の目標</Text>
+          {isEditingGoal ? (
+            <View style={styles.editContainer}>
+              <TextInput
+                style={styles.input}
+                value={newWaterGoal}
+                onChangeText={setNewWaterGoal}
+                keyboardType="numeric"
+                placeholder="目標を入力"
+              />
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsEditingGoal(false);
+                    setNewWaterGoal(String(profile.waterGoal));
+                  }}
+                  style={styles.cancelButton}
+                >
+                  <Text style={styles.buttonText}>キャンセル</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSaveWaterGoal}
+                  style={styles.saveButton}
+                >
+                  <Text style={styles.buttonText}>保存</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.infoContainer}>
+              <Text
+                style={styles.profileText}
+              >{`毎日の目標: ${profile.waterGoal}ml`}</Text>
+              <TouchableOpacity
+                onPress={() => setIsEditingGoal(true)}
+                style={styles.editButton}
+              >
+                <Text style={styles.buttonText}>修正</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* 取得したバッジ Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>取得したバッジ:</Text>
           <View style={styles.badgeContainer}>
-            <Image
-              source={require("@/assets/images/plus.png")} // Chỉnh đường dẫn hình ảnh nếu cần
-              style={styles.badgeIcon}
-            />
+            {badges.length > 0 ? (
+              badges.map((badge, index) => (
+                <Image
+                  key={index}
+                  source={
+                    badge
+                      ? { uri: badge }
+                      : require("@/assets/images/badge.png")
+                  }
+                  style={styles.badgeIcon}
+                />
+              ))
+            ) : (
+              <Text style={styles.profileText}>まだバッジはありません。</Text>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -143,33 +276,6 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  profileSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 15,
-    marginBottom: 10,
-    margin: 10,
-    borderRadius: 10,
-  },
-  icon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
-  },
-  angle_right: {
-    width: 20,
-    height: 20,
-  },
-  profileDetails: {
-    flexDirection: "column",
-  },
-  profileText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-  },
   section: {
     backgroundColor: "#fff",
     padding: 15,
@@ -178,9 +284,6 @@ const styles = StyleSheet.create({
     margin: 10,
   },
   settingItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: 5,
   },
   sectionTitle: {
@@ -188,34 +291,73 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
-  infoItem: {
-    flexDirection: "row",
-    marginBottom: 10,
+  profileDetails: {
+    flexDirection: "column",
   },
-  infoLabel: {
-    fontSize: 16,
-    color: "#555",
+  profileText: {
+    fontSize: 18,
+    marginBottom: 10,
+    color: "#333",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 8,
+    marginBottom: 10,
     flex: 1,
   },
-  infoText: {
-    fontSize: 16,
-    color: "#333",
-    flex: 2,
+  saveButton: {
+    backgroundColor: "#4CAF50",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 5,
   },
-  goalIcon: {
-    width: 40,
-    height: 40,
-    marginTop: 10,
+  cancelButton: {
+    backgroundColor: "#FF6347",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 5,
+    marginRight: 10,
+  },
+  editButton: {
+    backgroundColor: "#007BFF",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    textAlign: "center",
   },
   badgeContainer: {
     flexDirection: "row",
-    justifyContent: "flex-start",
+    flexWrap: "wrap",
     marginTop: 10,
   },
   badgeIcon: {
-    width: 40,
-    height: 40,
-    marginRight: 10,
+    width: 50,
+    height: 50,
+    margin: 5,
+  },
+  icon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignSelf: "center",
+    marginBottom: 15,
+  },
+  editContainer: {
+    flexDirection: "column",
+  },
+  infoContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
   },
 });
 

@@ -1,255 +1,297 @@
-import React, { useState,useEffect } from 'react';
-import { View, Text, Image, Switch, TouchableOpacity, StyleSheet, TouchableNativeFeedback, TouchableHighlight,Alert } from 'react-native';
-import Header from '../header';
-import Profile from './profile';
-import { useNavigation } from 'expo-router';
-import ChangePassword  from './change_email_password'; // 適切なファイルパスに変更
-import { getFirestore, doc, getDoc } from 'firebase/firestore'; 
-import { getAuth, } from 'firebase/auth';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Image,
+  Switch,
+  TouchableOpacity,
+  StyleSheet,
+  TouchableNativeFeedback,
+  TouchableHighlight,
+  Alert,
+} from "react-native";
+import Header from "../header";
+import Profile from "./profile";
+import { useNavigation } from "expo-router";
+import ChangePassword from "./change_password"; // パスワード変更画面
+import ChangeEmail from "./change_email"; // email変更画面
+import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
+const Setting: React.FC<{
+  onNavigateToEmail: () => void;
+  onNavigateToPassword: () => void;
+  onNavigate: () => void;
+}> = ({ onNavigateToEmail, onNavigateToPassword, onNavigate }) => {
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
+  const toggleNotification = () =>
+    setIsNotificationEnabled(!isNotificationEnabled);
 
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState({
+    name: "",
+    id: "",
+    waterGoal: 0,
+  });
 
-const Setting: React.FC<{ 
-    onNavigateToEmail: () => void, 
-    onNavigateToPassword: () => void, 
-    onNavigate: () => void 
-    }> = ({ onNavigateToEmail, onNavigateToPassword, onNavigate }) => {
-        const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
-        const toggleNotification = () => setIsNotificationEnabled(!isNotificationEnabled);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user || !user.uid) {
+          console.error("ログイン中のユーザーがいません");
+          return null;
+        }
+        const firestore = getFirestore(); // Firestoreのインスタンスを取得
+        const userId = user?.uid; // ログイン中のユーザーIDを取得する必要あり
+        const profileRef = doc(firestore, "users", userId);
+        const profileSnap = await getDoc(profileRef);
 
-        const [loading, setLoading] = useState(true);
-        const [profile, setProfile] = useState({
-            name: '',
-            id: '',
-            waterGoal: 0,
+        if (profileSnap.exists()) {
+          const data = profileSnap.data();
+          setProfile({
+            name: data.name || "",
+            id: profileSnap.id || "",
+            waterGoal: data.waterGoal || 0,
           });
-
-          useEffect(() => {
-            const fetchProfile = async () => {
-              try {
-                const auth = getAuth();
-                const user = auth.currentUser;
-                if (!user || !user.uid) {
-                    console.error('ログイン中のユーザーがいません');
-                    return null;
-                }
-                const firestore = getFirestore(); // Firestoreのインスタンスを取得
-                const userId = user?.uid; // ログイン中のユーザーIDを取得する必要あり
-                const profileRef = doc(firestore, 'users', userId);
-                const profileSnap = await getDoc(profileRef);
-        
-                if (profileSnap.exists()) {
-                  const data = profileSnap.data();
-                  setProfile({
-                    name: data.name || '',
-                    id: profileSnap.id || '',
-                    waterGoal: data.waterGoal || 0,
-                  });
-                } else {
-                  Alert.alert('エラー', 'プロフィール情報が見つかりません');
-                }
-              } catch (error) {
-                console.error('プロフィール取得エラー:', error);
-                Alert.alert('エラー', 'プロフィール情報を取得できませんでした');
-              } finally {
-                setLoading(false);
-              }
-            };
-        
-            fetchProfile();
-          }, []);
-        
-    const [isWaterAlertEnabled, setIsWaterAlertEnabled] = useState(false);
-    const [isDrinkingAlertEnabled, setIsDrinkingAlertEnabled] = useState(false);
-
-    const toggleWaterAlert = () => setIsWaterAlertEnabled(!isWaterAlertEnabled);
-    const toggleDrinkingAlert = () => setIsDrinkingAlertEnabled(!isDrinkingAlertEnabled);
-    const navigation = useNavigation(); // Hook navigation
-    const goToNotificationPage = () => {
-        // navigation.navigate('Notification');
+        } else {
+          Alert.alert("エラー", "プロフィール情報が見つかりません");
+        }
+      } catch (error) {
+        console.error("プロフィール取得エラー:", error);
+        Alert.alert("エラー", "プロフィール情報を取得できませんでした");
+      } finally {
+        setLoading(false);
+      }
     };
-    return (
-        <View style={styles.container}>
-            {/* Header */}
-            <Header title='設定' />
-            {/* Profile Section */}
-            <TouchableOpacity onPress={onNavigate} style={styles.settingSection}  >
-                <Text style={styles.sectionTitle}>プロフィール</Text>
-                {/* <TouchableOpacity onPress={onNavigate}>
+
+    fetchProfile();
+  }, []);
+
+  const [isWaterAlertEnabled, setIsWaterAlertEnabled] = useState(false);
+  const [isDrinkingAlertEnabled, setIsDrinkingAlertEnabled] = useState(false);
+
+  const toggleWaterAlert = () => setIsWaterAlertEnabled(!isWaterAlertEnabled);
+  const toggleDrinkingAlert = () =>
+    setIsDrinkingAlertEnabled(!isDrinkingAlertEnabled);
+  const navigation = useNavigation(); // Hook navigation
+  const goToNotificationPage = () => {
+    // navigation.navigate('Notification');
+  };
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <Header title="設定" />
+      {/* Profile Section */}
+      <TouchableOpacity onPress={onNavigate} style={styles.settingSection}>
+        <Text style={styles.sectionTitle}>プロフィール</Text>
+        {/* <TouchableOpacity onPress={onNavigate}>
                     <Text style={styles.buttonText}>IDで追加する</Text>
                 </TouchableOpacity> */}
-                <View style={styles.profileSection}>
-                {loading ? (
-                    <Text>プロフィールを読み込んでいます...</Text>
-                ) : (
-                    <>
-                    <Image source={require('@/assets/images/dittrau.png')} style={styles.icon} />
-                    <View style={styles.profileDetails}>
-                    <Text style={styles.profileText}>{`名前: ${profile.name}`}</Text>
-                    <Text style={styles.profileText}>{`ID: ${profile.id}`}</Text>
-                    <Text style={styles.profileText}>{`毎日の目標: ${profile.waterGoal}ml`}</Text>
-                    </View>
-                    </>
-                )}
-
-                </View>
+        <View style={styles.profileSection}>
+          {loading ? (
+            <Text>プロフィールを読み込んでいます...</Text>
+          ) : (
+            <>
+              <Image
+                source={require("@/assets/images/dittrau.png")}
+                style={styles.icon}
+              />
+              <View style={styles.profileDetails}>
+                <Text
+                  style={styles.profileText}
+                >{`名前: ${profile.name}`}</Text>
+                <Text style={styles.profileText}>{`ID: ${profile.id}`}</Text>
+                <Text
+                  style={styles.profileText}
+                >{`毎日の目標: ${profile.waterGoal}ml`}</Text>
+              </View>
+            </>
+          )}
+        </View>
+      </TouchableOpacity>
+      {/* Notification Settings Section */}
+      <View style={styles.settingSection}>
+        <View style={styles.settingItem}>
+          <Text style={styles.sectionTitle}>通知</Text>
+          <Switch
+            value={isNotificationEnabled}
+            onValueChange={toggleNotification}
+            trackColor={{ false: "#ccc", true: "#4CAF50" }}
+          />
+        </View>
+        {isNotificationEnabled && (
+          <>
+            <TouchableOpacity
+              onPress={goToNotificationPage}
+              style={styles.settingSection}
+            >
+              <View style={styles.settingItem}>
+                <Text style={styles.settingLabel}>水分不足の場合</Text>
+                <Image
+                  source={require("@/assets/images/angle-right.png")}
+                  style={styles.angle_right}
+                />
+              </View>
             </TouchableOpacity>
-            {/* Notification Settings Section */}
-            <View style={styles.settingSection}>
-                <View style={styles.settingItem}>
-                    <Text style={styles.sectionTitle}>通知</Text>
-                    <Switch
-                        value={isNotificationEnabled}
-                        onValueChange={toggleNotification}
-                        trackColor={{ false: "#ccc", true: "#4CAF50" }}
-                    />
-                </View>
-                {isNotificationEnabled && (
-                    <>
-                        <TouchableOpacity onPress={goToNotificationPage} style={styles.settingSection}>
-                            <View style={styles.settingItem}>
-                                <Text style={styles.settingLabel}>水分不足の場合</Text>
-                                <Image source={require('@/assets/images/angle-right.png')} style={styles.angle_right} />
-                            </View>
-                        </TouchableOpacity>
 
-                        <TouchableOpacity onPress={onNavigate} style={styles.settingSection}  >
-                            <View style={styles.settingItem}>
-                                <Text style={styles.settingLabel}>飲み過ぎの場合</Text>
-                                <Image source={require('@/assets/images/angle-right.png')} style={styles.angle_right} />
-                            </View>
-                        </TouchableOpacity>
-                    </>
-                )}
-            </View>
-            <View style={styles.settingSection}>
-                <Text style={styles.sectionTitle}>ユーザー情報</Text>
+            <TouchableOpacity
+              onPress={onNavigate}
+              style={styles.settingSection}
+            >
+              <View style={styles.settingItem}>
+                <Text style={styles.settingLabel}>飲み過ぎの場合</Text>
+                <Image
+                  source={require("@/assets/images/angle-right.png")}
+                  style={styles.angle_right}
+                />
+              </View>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+      <View style={styles.settingSection}>
+        <Text style={styles.sectionTitle}>ユーザー情報</Text>
+        {/* メールアドレス変更 */}
+        <TouchableOpacity
+          onPress={onNavigateToEmail}
+          style={styles.settingItem}
+        >
+          <Text style={styles.settingLabel}>メールアドレス変更</Text>
+          <Image
+            source={require("@/assets/images/angle-right.png")}
+            style={styles.angle_right}
+          />
+        </TouchableOpacity>
+        {/* パスワード変更 */}
+        <TouchableOpacity
+          onPress={onNavigateToPassword}
+          style={styles.settingItem}
+        >
+          <Text style={styles.settingLabel}>パスワード変更</Text>
+          <Image
+            source={require("@/assets/images/angle-right.png")}
+            style={styles.angle_right}
+          />
+        </TouchableOpacity>
+      </View>
 
-                {/* <TouchableOpacity onPress={onNavigateToEmail} style={styles.settingItem}>
-                    <Text style={styles.settingLabel}>メールアドレス変更</Text>
-                    <Image source={require('@/assets/images/angle-right.png')} style={styles.angle_right} />
-                </TouchableOpacity> */}
-                <TouchableOpacity onPress={onNavigateToPassword} style={styles.settingItem}>
-                    <Text style={styles.settingLabel}>パスワード変更</Text>
-                    <Image source={require('@/assets/images/angle-right.png')} style={styles.angle_right} />
-                </TouchableOpacity>
-
-            </View>
-
-
-            {/* Password and Email Settings Section */}
-            {/* { <View style={styles.changeSettings}>
+      {/* Password and Email Settings Section */}
+      {/* { <View style={styles.changeSettings}>
                 <TouchableOpacity style={styles.changeButton}>
                     <Text style={styles.buttonText}>パスワード、メルアドレス変更</Text>
                 </TouchableOpacity>
             </View> } */}
-        </View>
-    );
+    </View>
+  );
 };
 const SettingApp: React.FC = () => {
-    const [currentScreen, setCurrentScreen] = useState('Setting');
+  const [currentScreen, setCurrentScreen] = useState("Setting");
 
-    const navigateToProfile = () => setCurrentScreen('Profile');
-    const navigateToChangeEmail = () => setCurrentScreen('ChangeEmail');
-    const navigateToChangePassword = () => setCurrentScreen('ChangePassword');
-    const goBackToSetting = () => setCurrentScreen('Setting');
+  const navigateToProfile = () => setCurrentScreen("Profile");
+  const navigateToChangeEmail = () => setCurrentScreen("ChangeEmail");
+  const navigateToChangePassword = () => setCurrentScreen("ChangePassword");
+  const goBackToSetting = () => setCurrentScreen("Setting");
 
-    return (
-        <View style={styles.container}>
-            {currentScreen === 'Setting' && (
-                <Setting 
-                    onNavigateToEmail={navigateToChangeEmail} 
-                    onNavigateToPassword={navigateToChangePassword} 
-                    onNavigate={navigateToProfile} 
-                />
-            )}
-            {currentScreen === 'Profile' && <Profile onGoBack={goBackToSetting} />}
-            {/* {currentScreen === 'ChangeEmail' && <ChangeEmail onGoBack={goBackToSetting} />} */}
-            {currentScreen === 'ChangePassword' && <ChangePassword onGoBack={goBackToSetting} />}
-        </View>
-    );
+  return (
+    <View style={styles.container}>
+      {currentScreen === "Setting" && (
+        <Setting
+          onNavigateToEmail={navigateToChangeEmail}
+          onNavigateToPassword={navigateToChangePassword}
+          onNavigate={navigateToProfile}
+        />
+      )}
+      {currentScreen === "Profile" && <Profile onGoBack={goBackToSetting} />}
+      {currentScreen === "ChangeEmail" && (
+        <ChangeEmail onGoBack={goBackToSetting} />
+      )}
+      {currentScreen === "ChangePassword" && (
+        <ChangePassword onGoBack={goBackToSetting} />
+      )}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#E6F2F9',
-    },
-    backButton: {
-        position: 'absolute',
-        left: 0,
-    },
-    backText: {
-        fontSize: 20,
-        color: '#007BFF',
-    },
-    profileSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        padding: 5,
-
-    },
-    icon: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        marginRight: 30,
-    },
-    angle_right: {
-        width: 20,
-        height: 20,
-    },
-    profileDetails: {
-        flexDirection: 'column',
-    },
-    profileText: {
-        fontSize: 18,
-        color: 'black',
-    },
-    settingSection: {
-        backgroundColor: '#fff',
-        padding: 10,
-        borderRadius: 10,
-        margin: 10,
-        marginTop: 20
-    },
-    sectionTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    settingItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    settingLabel: {
-        fontSize: 18,
-        color: '#333',
-        marginTop: 5,
-    },
-    changeSettings: {
-        marginTop: 20,
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 10,
-    },
-    changeButton: {
-        backgroundColor: '#ADD8E6',
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    buttonText: {
-        fontSize: 16,
-        color: 'black',
-    },
+  container: {
+    flex: 1,
+    backgroundColor: "#E6F2F9",
+  },
+  backButton: {
+    position: "absolute",
+    left: 0,
+  },
+  backText: {
+    fontSize: 20,
+    color: "#007BFF",
+  },
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 5,
+  },
+  icon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 30,
+  },
+  angle_right: {
+    width: 20,
+    height: 20,
+  },
+  profileDetails: {
+    flexDirection: "column",
+  },
+  profileText: {
+    fontSize: 18,
+    color: "black",
+  },
+  settingSection: {
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 10,
+    margin: 10,
+    marginTop: 20,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  settingItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  settingLabel: {
+    fontSize: 18,
+    color: "#333",
+    marginTop: 5,
+  },
+  changeSettings: {
+    marginTop: 20,
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 10,
+  },
+  changeButton: {
+    backgroundColor: "#ADD8E6",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: {
+    fontSize: 16,
+    color: "black",
+  },
 });
 
 export default SettingApp;
-
 
 // import React, { useState } from 'react';
 // import { View, Text, Image, Switch, TouchableOpacity, StyleSheet } from 'react-native';
@@ -352,35 +394,7 @@ export default SettingApp;
 
 // export default SettingApp;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//             {/* 
+//             {/*
 //             {currentScreen === 'Setting' ? (
 //                 <Setting onNavigate={navigateNotification} />
 //             ) : (

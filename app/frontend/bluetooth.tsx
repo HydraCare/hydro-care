@@ -3,10 +3,12 @@ import { View, Text, Button, FlatList, StyleSheet, PermissionsAndroid, Platform,
 import BleManager from 'react-native-ble-manager';
 import { NativeEventEmitter, NativeModules } from 'react-native';
 
+
 interface BluetoothModalProps {
     visible: boolean;
     onClose: () => void;
     onConnect: () => void;
+    onDataUpdate: (data: number[]) => void; // Callback để gửi dữ liệu
 }
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
@@ -14,12 +16,11 @@ const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 const SERVICE_UUID = '7A0247E7-8E88-409B-A959-AB5092DDB03E';
 const CHARACTERISTIC_UUID = '82258BAA-DF72-47E8-99BC-B73D7ECD08A5';
 
-const BluetoothModal: React.FC<BluetoothModalProps> = ({ visible, onClose, onConnect }) => {
+const BluetoothModal: React.FC<BluetoothModalProps> = ({ visible, onClose, onConnect, onDataUpdate }) => {
     const [isScanning, setIsScanning] = useState(false);
     const [devices, setDevices] = useState<any[]>([]);
     const [connectedDevice, setConnectedDevice] = useState<any | null>(null);
-    const [sensorData, setSensorData] = useState<number[]>([]);
-
+    // const [sensorData, setSensorData] = useState<number[]>([]);
     useEffect(() => {
         // BLE Manager initialization
         BleManager.start({ showAlert: false })
@@ -44,10 +45,12 @@ const BluetoothModal: React.FC<BluetoothModalProps> = ({ visible, onClose, onCon
         };
 
         const handleUpdateValue = ({ value }: { value: number[] }) => {
-            console.log('Received Data:', value);
-            setSensorData(value);
+            console.log('Received Dataa:', value);
+            // setSensorData(value);
+            onDataUpdate(value);
+            // setSensorData1(value)
+            console.log("data", value[0])
         };
-
         bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
         bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan);
         bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValue);
@@ -58,7 +61,7 @@ const BluetoothModal: React.FC<BluetoothModalProps> = ({ visible, onClose, onCon
             bleManagerEmitter.removeAllListeners('BleManagerStopScan');
             bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
         };
-    }, []);
+    }, [onDataUpdate]);
 
     const requestPermissions = async () => {
         if (Platform.OS === 'android') {
@@ -129,7 +132,7 @@ const BluetoothModal: React.FC<BluetoothModalProps> = ({ visible, onClose, onCon
                     {connectedDevice && (
                         <View style={styles.sensorData}>
                             <Text style={styles.title}>Connected to: {connectedDevice}</Text>
-                            <Text>Sensor Data: {sensorData.join(', ')}</Text>
+                            {/* <Text>Sensor Data: {sensorData.join(', ')}</Text> */}
                         </View>
                     )}
                     <FlatList
@@ -139,9 +142,9 @@ const BluetoothModal: React.FC<BluetoothModalProps> = ({ visible, onClose, onCon
                         style={styles.deviceList}
                     />
                     {/* Button to connect */}
-                    <TouchableOpacity onPress={onConnect} style={styles.connectButton}>
+                    {/* <TouchableOpacity onPress={onConnect} style={styles.connectButton}>
                         <Text style={styles.connectButtonText}>Connect</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
 
                     {/* Close Button */}
                     <TouchableOpacity onPress={onClose} style={styles.closeButton}>

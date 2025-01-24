@@ -15,6 +15,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
 } from "firebase/auth";
+import Header from "../header";
 
 const ChangeEmail: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -63,42 +64,46 @@ const ChangeEmail: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Text style={styles.title}>メールアドレス変更</Text>
+    <View>
+      <Header title="メールアドレス変更" back="Back" onBackPress={onGoBack} />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>現在のパスワード</Text>
-          <TextInput
-            style={styles.input}
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-            placeholder="現在のパスワードを入力"
-            secureTextEntry
-          />
+        <View style={styles.container}>
+          {/* <Text style={styles.title}>メールアドレス変更</Text> */}
 
-          <Text style={styles.label}>新しいメールアドレス</Text>
-          <TextInput
-            style={styles.input}
-            value={newEmail}
-            onChangeText={setNewEmail}
-            placeholder="新しいメールアドレスを入力"
-            keyboardType="email-address"
-          />
+          <View style={styles.formContainer}>
+            <Text style={styles.label}>現在のパスワード</Text>
+            <TextInput
+              style={styles.input}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholder="現在のパスワードを入力"
+              secureTextEntry
+            />
+
+            <Text style={styles.label}>新しいメールアドレス</Text>
+            <TextInput
+              style={styles.input}
+              value={newEmail}
+              onChangeText={setNewEmail}
+              placeholder="新しいメールアドレスを入力"
+              keyboardType="email-address"
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.changeButton}
+            onPress={handleEmailChange}
+          >
+            <Text style={styles.changeButtonText}>メールアドレスを変更</Text>
+          </TouchableOpacity>
+
+          {/* <TouchableOpacity style={styles.backButton} onPress={onGoBack}>
+            <Text style={styles.backButtonText}>戻る</Text>
+          </TouchableOpacity> */}
         </View>
-
-        <TouchableOpacity
-          style={styles.changeButton}
-          onPress={handleEmailChange}
-        >
-          <Text style={styles.changeButtonText}>メールアドレスを変更</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.backButton} onPress={onGoBack}>
-          <Text style={styles.backButtonText}>戻る</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 

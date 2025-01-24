@@ -11,17 +11,17 @@ import {
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import Header from "../header";
-
-const Challenge: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
+// const Challenge: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
+const Challenge: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [challengeData, setChallengeData] = useState({
     loginCount: 0,
     totalWater: 0,
   });
 
-  const handleBack = () => {
-    onGoBack();
-  };
+  // const handleBack = () => {
+  //   onGoBack();
+  // };
 
   useEffect(() => {
     const fetchChallengeData = async () => {
@@ -61,7 +61,7 @@ const Challenge: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
 
   return (
     <View style={styles.container}>
-      <Header title="チャレンジ" back="Back" onBackPress={handleBack} />
+      <Header title="チャレンジ" />
       <ScrollView style={styles.scrollContainer}>
         {/* チャレンジ統計セクション */}
         <View style={styles.section}>

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Button } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Button, Alert, Image } from 'react-native';
+import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import Header from '../header';
+import { getAuth } from 'firebase/auth';
+import { collection, doc, getDoc, getDocs, getFirestore, query, setDoc, Timestamp, where } from 'firebase/firestore';
 
 type ChartData = {
     labels: string[];
@@ -10,196 +12,411 @@ type ChartData = {
         data: number[];
     }[];
 };
-
 type Summary = {
     total: number;
     average: number;
 };
-
 type ChartDataMap = {
     day: ChartData;
     week: ChartData;
     month: ChartData;
     year: ChartData;
 };
-
+interface Log {
+    id: string;
+    waterDrunk: number;
+    day: string;
+    hour: number;
+    minute: number;
+    Genre: string;
+}
+// const WaterIntakeHistory: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
 const WaterIntakeHistory: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'day' | 'week' | 'month' | 'year'>('day'); //初期：day
+    const [activeTab, setActiveTab] = useState<'day' | 'week' | 'month' | 'year'>('day');//初期：day
+    //firebase関連コード
+    const [userId, setUserId] = useState(""); // State for user ID
+    const [results, setResults] = useState<Log[]>([]);
+    const today = new Date().toISOString().split("T")[0];
+    const [week_Data, setWeek_Data] = useState<{
+        labels: string[];
+        datasets: { data: number[] }[];
+    }>({
+        labels: [],
+        datasets: [{ data: [] }],
+    });
+    const [waterData, setWaterData] = useState<{
+        labels: string[];
+        datasets: { data: number[] }[];
+    }>({
+        labels: [],
+        datasets: [{ data: [] }],
+    });
+    const [mouth_Data, setMouth_Data] = useState<{
+        labels: string[];
+        datasets: { data: number[] }[];
+    }>({
+        labels: [],
+        datasets: [{ data: [] }],
+    });
+    const [year_Data, setYear_Data] = useState<{
+        labels: string[];
+        datasets: { data: number[] }[];
+    }>({
+        labels: [],
+        datasets: [{ data: [] }],
+    });
+    const [graphData, setGraphData] = useState<{
+        labels: string[];
+        datasets: { data: number[] }[];
+    }>({
+        labels: [],
+        datasets: [{ data: [] }],
+    });
+    useEffect(() => {
+        const fetchData = async () => {
+            const auth = getAuth();
+            const user = auth.currentUser;
+            if (user) {
+                setUserId(user.uid);
+                const db = getFirestore();
+                const targetDateStart = new Date(today);
+                targetDateStart.setHours(0, 0, 0, 0);
+                const targetDateEnd = new Date(today);
+                targetDateEnd.setHours(23, 59, 59, 999);
+                const DayLog = `${new Date().getFullYear()}年${new Date().getMonth() + 1}月${new Date().getDate()}日`;
+                try {
+                    // ユーザーのドキュメント内に「oneDayAmount」サブコレクションを作成
+                    const oneDayAmountRef = collection(doc(db, "users", userId), "oneDayAmount");
+                    const docRef = doc(oneDayAmountRef, DayLog);
+                    await setDoc(docRef, {
+                        AmountWaterDrunk: totalDay,
+                        day: DayLog
+                    });
+                    console.log("1日水分摂取量のデータが正常にFirestoreに追加されました！！");
+                } catch (error) {
+                    console.error("ドキュメントの追加エラー1日: ", error);
+                }
 
-    // 仮のデータ
-    const chartData: ChartDataMap = {
-        day: {
-            labels: ['00:00', '06:00', '12:00', '18:00', '24:00'],
-            datasets: [
-                {
-                    data: [500, 1200, 1500, 1800, 2000],
-                },
-            ],
-        },
-        week: {
-            labels: ['月', '火', '水', '木', '金', '土', '日'],
-            datasets: [
-                {
-                    data: [1000, 1500, 1200, 1800, 2000, 1500, 1700],
-                },
-            ],
-        },
-        month: {
-            labels: ['10/01', '10/05', '10/10', '10/15', '10/20'],
-            datasets: [
-                {
-                    data: [2000, 2500, 2200, 2100, 2400],
-                },
-            ],
-        },
-        year: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [
-                {
-                    data: [2500, 2800, 2000, 2200, 2300, 2100, 2400, 2500, 2600, 2400, 2700, 2900],
-                },
-            ],
-        },
+                const logsRef = collection(db, "users", user.uid, "oneDayLog");
+                const targetDateStartTimestamp = Timestamp.fromDate(targetDateStart);
+                const targetDateEndTimestamp = Timestamp.fromDate(targetDateEnd);
+                const q = query(
+                    logsRef,
+                    where("drunkTime", ">=", targetDateStartTimestamp),
+                    where("drunkTime", "<=", targetDateEndTimestamp)
+                );
+                const querySnapshot = await getDocs(q);
+                const fetchedResults: Log[] = querySnapshot.docs.map((doc) => {
+                    const docData = doc.data();
+                    return {
+                        id: doc.id,
+                        waterDrunk: docData.waterDrunk,
+                        day: docData.day,
+                        hour: docData.hour,
+                        minute: docData.minute,
+                        Genre: docData.Genre,
+                    };
+                });
+
+                setResults(fetchedResults);
+                week_update();
+                //moth
+                mouth_update();
+            } else {
+                Alert.alert("Error", "User is not logged in.");
+            }
+        };
+
+        fetchData();
+    }, [userId]);
+    //week graph
+    const week_update = async () => {
+        const db = getFirestore();
+        const week = ["月", "火", "水", "木", "金", "土", "日"];
+        const { startDate, endDate } = getWeekDateRange();
+        const weekData: number[] = [];
+        try {
+            for (let i = 0; i < 7; i++) {
+                const currentDate = new Date(startDate);
+                currentDate.setDate(startDate.getDate() + i);
+                const formattedDate = formatDateToDocument(currentDate);
+                const docRef = doc(db, "users", userId, "oneDayAmount", formattedDate);
+                const docSnap = await getDoc(docRef);
+                weekData.push(docSnap.exists() ? docSnap.data()?.AmountWaterDrunk : 0);
+            }
+            setWeek_Data({ labels: week, datasets: [{ data: weekData }] });
+            console.log("total week",)
+        } catch (error) {
+            console.error("Error fetching logs from Firestore:", error);
+            setWeek_Data({ labels: week, datasets: [{ data: new Array(7).fill(0) }] });
+        }
+    }
+    // mouth graph
+    const mouth_update = async () => {
+        const db = getFirestore();
+        const { startDate, endDate } = getWeekDateRange();
+        const month = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+        try {
+            const totalDaysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+            let monthlyTotal = 0;
+            const monthData: number[] = [];
+
+            for (let i = 1; i <= totalDaysInMonth; i++) {
+                const currentDate = new Date(startDate);
+                currentDate.setDate(i);
+                const formattedDate = formatDateToDocument(currentDate);
+                const docRef = doc(db, "users", userId, "oneDayAmount", formattedDate);
+                const docSnap = await getDoc(docRef);
+                const dailyAmount = docSnap.exists() ? docSnap.data()?.AmountWaterDrunk : 0;
+                monthlyTotal += dailyAmount;
+                monthData.push(dailyAmount);
+            }
+            setMouth_Data({ labels: month, datasets: [{ data: [monthlyTotal] }] });
+            console.log("total mouth", monthlyTotal)
+        } catch (error) {
+            console.error("Error fetching logs from Firestore:", error);
+
+            setMouth_Data({ labels: month, datasets: [{ data: [0] }] });
+        }
+    }
+    // 今日のデータ
+    // console.log("results", results)
+    const TotalWaterDrunk_Day = (logs: any[]) => {
+        if (!logs || logs.length === 0) return 0;
+        const total = logs.reduce((acc, log) => {
+            const waterDrunk = parseInt(log.waterDrunk, 10);
+            return acc + (isNaN(waterDrunk) ? 0 : waterDrunk);
+        }, 0);
+        return total;
+    };
+    const totalDay = TotalWaterDrunk_Day(results);
+    console.log(`Total water drunk: ${totalDay}㎖`);
+    const processChartData = (logs: Log[]) => {
+        const labels: string[] = [];
+        const data: number[] = [];
+        logs.forEach((log) => {
+            const time = `${log.hour}:${log.minute < 10 ? `0${log.minute}` : log.minute}`;
+            labels.push(time);
+            data.push(log.waterDrunk);
+        });
+        return {
+            labels,
+            datasets: [{ data }],
+        };
+    };
+    const formatDateToDocument = (date: Date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        return `${year}年${month}月${day}日`;
     };
 
-    // Dữ liệu tổng kết
-    const summary: Record<'week' | 'month' | 'year', Summary> = {
-        week: {
-            total: 4000,
-            average: 1000,
-        },
-        month: {
-            total: 10000,
-            average: 1000,
-        },
-        year: {
-            total: 120000,
-            average: 10000,
-        },
-    };
+    //グラフ処理
+    const handleTabChange = async (tab: 'day' | 'week' | 'month' | 'year') => {
+        if (tab == 'day') {
+            setActiveTab(tab);
+            const filteredData = processDataForTab(results, tab);
+            // useEffect();
+            setGraphData(filteredData);
 
-    const handleTabChange = (tab: 'day' | 'week' | 'month' | 'year') => {
-        setActiveTab(tab);
-    };
+        } else if (tab == 'week') {
+            setActiveTab(tab);
+            week_update();
+            setGraphData(week_Data);
+        } else if (tab == 'month') {
+            setActiveTab(tab);
+            mouth_update();
+            setGraphData(mouth_Data);
+        } else {
+            setActiveTab(tab);
+        }
 
+    }
     const chartConfig = {
         backgroundColor: '#E6F2F9',
-        backgroundGradientFrom: '#E6F2F9',
+        backgroundGradientFrom: '#FFFFFF',
         backgroundGradientTo: '#E6F2F9',
         decimalPlaces: 0,
         color: (opacity = 1) => `rgba(0, 100, 255, ${opacity})`,
         labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+        barPercentage: 0.4,
         style: {
-            borderRadius: 10,
+            borderRadius: 5,
         },
     };
-    // Dữ liệu log nước
-    const waterLogs = [
-        { time: '6:00', amount: 1200, type: '' },
-        { time: '12:00', amount: 300, type: '' },
-        { time: '18:00', amount: 200, type: '' },
-        { time: '24:00', amount: 300, type: '' },
-    ];
-    const dataToDisplay = chartData[activeTab];
+    const processDataForTab = (logs: Log[], tab: 'day' | 'week' | 'month' | 'year') => {
+        switch (tab) {
+            case 'day':
+                return processChartData(logs);
+            case 'week':
 
+            case 'month':
+
+                const monthData = logs.reduce((acc, log) => {
+                    const date = log.day;
+                    acc[date] = (acc[date] || 0) + log.waterDrunk;
+                    return acc;
+                }, {} as Record<string, number>);
+                return {
+                    labels: Object.keys(monthData),
+                    datasets: [{ data: Object.values(monthData) }],
+                };
+            case 'year':
+                const yearData = logs.reduce((acc, log) => {
+                    const month = new Date(log.day).getMonth() + 1;
+                    acc[month] = (acc[month] || 0) + log.waterDrunk;
+                    return acc;
+                }, {} as Record<number, number>);
+                return {
+                    labels: Object.keys(yearData).map((m) => `月 ${m}`),
+                    datasets: [{ data: Object.values(yearData) }],
+                };
+            default:
+                return processChartData(logs);
+        }
+
+    };
+    console.log("graph", graphData)
+    //week to
+    const total_week = week_Data.datasets.reduce((total, dataset) => {
+        return total + dataset.data.reduce((sum, value) => sum + value, 0);
+    }, 0);
+    //週、月、年を取得処理
+    const getWeekDateRange = () => {
+        const today = new Date();
+        const currentDay = today.getDay();
+        const diff = currentDay === 0 ? -6 : 1 - currentDay;
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() + diff);
+        const endDate = new Date(today);
+        endDate.setDate(today.getDate() + diff + 6);
+
+        return { startDate, endDate };
+    };
+    const getMonthDateRange = () => {
+        const now = new Date();
+        const startDate1 = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endDate2 = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        return { startDate1, endDate2 };
+    };
+
+    // const dataToDisplay = chartData[activeTab];
     return (
         <View style={styles.container}>
             <Header title="履歴" back='' />
             {/* Tab Navigation */}
-            <View style={styles.tabContainer}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'day' && styles.activeTab]}
-                    onPress={() => handleTabChange('day')}
-                >
-                    <Text style={styles.tabText}>日</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'week' && styles.activeTab]}
-                    onPress={() => handleTabChange('week')}
-                >
-                    <Text style={styles.tabText}>週</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'month' && styles.activeTab]}
-                    onPress={() => handleTabChange('month')}
-                >
-                    <Text style={styles.tabText}>月</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'year' && styles.activeTab]}
-                    onPress={() => handleTabChange('year')}
-                >
-                    <Text style={styles.tabText}>年</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Biểu đồ */}
-            <Text style={styles.chartTitle}>
-                {activeTab === 'day'
-                    ? '今日'
-                    : activeTab === 'week'
-                        ? '2024/10/13~2024/10/20'
-                        : activeTab === 'month'
-                            ? '2024年10月'
-                            : '2024年'}
-            </Text>
-            <BarChart
-                data={dataToDisplay}
-                width={Dimensions.get('window').width - 50}
-                height={250}
-                chartConfig={chartConfig}
-                withHorizontalLabels={true}
-                showValuesOnTopOfBars={false}  //value top
-                yAxisLabel=""
-                yAxisSuffix="ml"
-            />
-
-            {/* Tổng kết */}
-            <View style={styles.summaryContainer}>
-                <Text style={styles.summaryText}>
-                    合計 2000: {summary[activeTab as 'week' | 'month' | 'year']?.total}ml
+            <ScrollView>
+                <View style={styles.tabContainer}>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'day' && styles.activeTab]}
+                        onPress={() => handleTabChange('day')}
+                    >
+                        <Text style={styles.tabText}>日</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'week' && styles.activeTab]}
+                        onPress={() => handleTabChange('week')}
+                    >
+                        <Text style={styles.tabText}>週</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'month' && styles.activeTab]}
+                        onPress={() => handleTabChange('month')}
+                    >
+                        <Text style={styles.tabText}>月</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'year' && styles.activeTab]}
+                        onPress={() => handleTabChange('year')}
+                    >
+                        <Text style={styles.tabText}>年</Text>
+                    </TouchableOpacity>
+                </View>
+                <Text style={styles.chartTitle}>
+                    {activeTab === 'day'
+                        ? '今日'
+                        : activeTab === 'week'
+                            ? (() => {
+                                const { startDate, endDate } = getWeekDateRange(); // Lấy ngày bắt đầu và kết thúc tuần
+                                const formatDate = (date: Date) => {
+                                    const year = date.getFullYear();
+                                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                                    const day = String(date.getDate()).padStart(2, '0');
+                                    return `${year}/${month}/${day}`;
+                                };
+                                return `${formatDate(startDate)}~${formatDate(endDate)}`;
+                            })()
+                            : activeTab === 'month'
+                                ? `${new Date().getFullYear()}年${new Date().getMonth() + 1}月`
+                                : `${new Date().getFullYear()}年`}
                 </Text>
-                <Text style={styles.summaryText}>
-                    平均 2000: {summary[activeTab as 'week' | 'month' | 'year']?.average}ml
-                </Text>
-
-
-            </View>
-
-            {/* Log Nước */}
-            <View style={styles.logsContainer}>
-                <Text style={styles.logsTitle}>今日のログ</Text>
-                <ScrollView style={styles.logsContainer}>
-                    {waterLogs.map((log, index) => (
-                        <View key={index} style={styles.logItem}>
-                            <Text>{log.time} - {log.type} {log.amount}ml</Text>
-                        </View>
-                    ))}
-                </ScrollView>
-            </View>
-
-            <Button title="ログ表示" onPress={() => alert('ログ表示ボタンがクリックされました')} />
+                <BarChart
+                    data={graphData}
+                    width={Dimensions.get('window').width}
+                    height={260}
+                    chartConfig={chartConfig}
+                    withHorizontalLabels={true}
+                    showBarTops={true}
+                    showValuesOnTopOfBars={true}
+                    yAxisLabel=""
+                    yAxisSuffix="ml"
+                    segments={4}
+                />
+                {/* 合計 */}
+                <View style={styles.summaryContainer}>
+                    <Text style={styles.summaryText}>
+                        {activeTab === 'week' ? (() => {
+                            return `今週の合計：${total_week}`;
+                        })() : null}
+                    </Text>
+                    <Text style={styles.summaryText}>
+                        本日の合計 : {totalDay}ml
+                    </Text>
+                    {/* <Text style={styles.summaryText}> */}
+                    {/* 平均 : {summary[activeTab as 'week' | 'month' | 'year']?.average}ml */}
+                    {/* 平均 : ml */}
+                    {/* </Text> */}
+                </View>
+                <View>
+                    <Text style={styles.logsTitle}>今日のログ</Text>
+                    <View style={styles.logsContainer}>
+                        {results.map((log) => (
+                            <View key={log.id} style={styles.logItem}>
+                                <Image source={require('@/assets/images/water3.png')} style={styles.icon} />
+                                <View style={styles.infoContainer}>
+                                    <Text style={styles.genreText}>{log.Genre}</Text>
+                                    <Text style={styles.waterDrunkText}>{log.waterDrunk}㎖</Text>
+                                </View>
+                                <View style={styles.timeContainer}>
+                                    <Text style={styles.timeText}>{`${log.hour}:${log.minute < 10 ? `0${log.minute}` : log.minute}`}</Text>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+                {/* <Button title="ログ表示" onPress={() => alert('ログ表示ボタンがクリックされました')} /> */}
+            </ScrollView>
         </View>
     );
 };
-
 const styles = StyleSheet.create({
+
     container: {
         flex: 1,
         backgroundColor: '#E6F2F9',
-        // padding: 20,
+
     },
     tabContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginBottom: 20,
+        // marginBottom: 10,
         padding: 20,
     },
     tab: {
         paddingVertical: 10,
         paddingHorizontal: 20,
         backgroundColor: '#B0C4DE',
-        borderRadius: 10,
+        borderRadius: 8,
     },
     activeTab: {
         backgroundColor: '#ADD8E6',
@@ -212,37 +429,66 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 10,
+        textAlign: 'center'
+        // backgroundColor: '#fff'
     },
     summaryContainer: {
-        marginTop: 20,
+        marginTop: 10,
         padding: 10,
-        backgroundColor: '#fff',
-        borderRadius: 10,
+        // backgroundColor: '#fff',
+        // borderRadius: 10,
     },
     summaryText: {
         fontSize: 18,
         marginBottom: 10,
     },
-    logsContainer: {
-        marginTop: 20,
-        padding: 10,
-        backgroundColor: '#fff',
-        borderRadius: 10,
-    },
     logsTitle: {
+        flex: 1,
         fontSize: 20,
-        marginBottom: 10,
+        marginLeft: 10,
         fontWeight: 'bold',
     },
-    scrollView: {
-        marginTop: 10,
+    logsContainer: {
+        // flex: 1,
+        padding: 10,
+        paddingHorizontal: 10,
     },
     logItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'white',
         padding: 10,
-        marginBottom: 10,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 10,
+        marginVertical: 8,
+        borderRadius: 8,
+    },
+    icon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 10,
+    },
+    infoContainer: {
+        flex: 1,
+        flexDirection: 'column',
+    },
+    genreText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#000',
+    },
+    waterDrunkText: {
+        fontSize: 14,
+        color: '#000',
+    },
+    timeContainer: {
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+    },
+    timeText: {
+        fontSize: 16,
+        color: '#000',
+        fontWeight: 'bold',
     },
 });
-
 export default WaterIntakeHistory;

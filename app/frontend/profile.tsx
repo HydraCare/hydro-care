@@ -13,7 +13,6 @@ import Header from "../header";
 import * as ImagePicker from "expo-image-picker";
 import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-
 const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
   const handleBack = () => {
     onGoBack();

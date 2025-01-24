@@ -3,10 +3,10 @@ import { NavigationContainer, useRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Header from '../header';
 import React from 'react';
-
-const Water_noti: React.FC = () => {
+// const Water_noti: React.FC = () => {
+const Water_noti: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
     const route = useRoute();
-    const { onGoBack } = route.params as { onGoBack: () => void };
+    // const { onGoBack } = route.params as { onGoBack: () => void };
 
     // Các thông báo về "飲みすぎ"
     let notifications = [

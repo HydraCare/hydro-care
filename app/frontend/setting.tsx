@@ -15,6 +15,7 @@ import Profile from "./profile";
 import { useNavigation } from "expo-router";
 import ChangePassword from "./change_password"; // パスワード変更画面
 import ChangeEmail from "./change_email"; // email変更画面
+import Water_noti from "./water_noti";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
@@ -22,7 +23,8 @@ const Setting: React.FC<{
   onNavigateToEmail: () => void;
   onNavigateToPassword: () => void;
   onNavigate: () => void;
-}> = ({ onNavigateToEmail, onNavigateToPassword, onNavigate }) => {
+  onNavigateToDrinking: () => void;
+}> = ({ onNavigateToEmail, onNavigateToPassword, onNavigate, onNavigateToDrinking }) => {
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
   const toggleNotification = () =>
     setIsNotificationEnabled(!isNotificationEnabled);
@@ -137,7 +139,7 @@ const Setting: React.FC<{
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={onNavigate}
+              onPress={onNavigateToDrinking}
               style={styles.settingSection}
             >
               <View style={styles.settingItem}>
@@ -192,6 +194,7 @@ const SettingApp: React.FC = () => {
   const navigateToProfile = () => setCurrentScreen("Profile");
   const navigateToChangeEmail = () => setCurrentScreen("ChangeEmail");
   const navigateToChangePassword = () => setCurrentScreen("ChangePassword");
+  const onNavigateToDrinking = () => setCurrentScreen("Water_noti");
   const goBackToSetting = () => setCurrentScreen("Setting");
 
   return (
@@ -201,6 +204,7 @@ const SettingApp: React.FC = () => {
           onNavigateToEmail={navigateToChangeEmail}
           onNavigateToPassword={navigateToChangePassword}
           onNavigate={navigateToProfile}
+          onNavigateToDrinking={onNavigateToDrinking}
         />
       )}
       {currentScreen === "Profile" && <Profile onGoBack={goBackToSetting} />}
@@ -209,6 +213,9 @@ const SettingApp: React.FC = () => {
       )}
       {currentScreen === "ChangePassword" && (
         <ChangePassword onGoBack={goBackToSetting} />
+      )}
+      {currentScreen === "Water_noti" && (
+        <Water_noti onGoBack={goBackToSetting} />
       )}
     </View>
   );

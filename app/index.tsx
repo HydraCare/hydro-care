@@ -12,9 +12,115 @@ import Register from "./frontend/sign_up";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
 import Sign_up_info from "./frontend/sign_up_info";
+import test1 from "./frontend/test1";
+import Water_Intake from "./frontend/water_intake";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// =======
+// const TabIcon = ({
+//   focused,
+//   source,
+//   sourceFocused,
+// }: {
+//   focused: boolean;
+//   source: any;
+//   sourceFocused: any;
+// }) => (
+//   <Image
+//     source={focused ? sourceFocused : source}
+//     style={styles.icon}
+//   />
+// );
+// const TabNavigator = () => {
+//   return (
+//     <Tab.Navigator
+//       screenOptions={{
+//         tabBarStyle: styles.tabBar,
+//       }}
+//     >
+//       <Tab.Screen
+//         name="水分摂取"
+//         component={WaterIntake}
+//         options={{
+//           title: "",
+//           headerShown: false,
+//           tabBarIcon: ({ focused }) => (
+//             <TabIcon
+//               focused={focused}
+//               source={require("@/assets/images/water.png")}
+//               sourceFocused={require("@/assets/images/water2.png")}
+//             />
+//           ),
+//         }}
+//       />
+//       <Tab.Screen
+//         name="Details"
+//         component={History}
+//         options={{
+//           title: "",
+//           headerShown: false,
+//           tabBarIcon: ({ focused }) => (
+//             <TabIcon
+//               focused={focused}
+//               source={require("@/assets/images/history.png")}
+//               sourceFocused={require("@/assets/images/history_color.png")}
+//             />
+//           ),
+//         }}
+//       />
+//       <Tab.Screen
+//         name="Share"
+//         component={Friend}
+//         options={{
+//           title: "",
+//           headerShown: false,
+//           tabBarIcon: ({ focused }) => (
+//             <TabIcon
+//               focused={focused}
+//               source={require("@/assets/images/friend.png")}
+//               sourceFocused={require("@/assets/images/friend_color.png")}
+//             />
+//           ),
+//         }}
+//       />
+//       <Tab.Screen
+//         name="チャレンジ"
+//         component={Challenge}
+//         options={{
+//           title: "",
+//           headerShown: false,
+//           tabBarIcon: ({ focused }) => (
+//             <TabIcon
+//               focused={focused}
+//               source={require("@/assets/images/challenge.png")}
+//               sourceFocused={require("@/assets/images/challenge_color.png")}
+//             />
+//           ),
+//         }}
+//       />
+//       <Tab.Screen
+//         name="設定"
+//         component={test1}
+//         options={{
+//           title: "",
+//           headerShown: false,
+//           tabBarIcon: ({ focused }) => (
+//             <TabIcon
+//               focused={focused}
+//               source={require("@/assets/images/setting.png")}
+//               sourceFocused={require("@/assets/images/setting_color.png")}
+//             />
+//           ),
+//         }}
+//       />
+//     </Tab.Navigator>
+//   );
+// }
+// export default function Index() {
+//   const [isLoggedIn, setIsLoggedIn] = useState(false); //login の状態確認
+// >>>>>>> Stashed changes
 
 const TabIcon = ({ focused, source, sourceFocused }: { focused: boolean; source: any; sourceFocused: any }) => (
   <Image source={focused ? sourceFocused : source} style={styles.icon} />
@@ -24,7 +130,7 @@ const TabNavigator = () => (
   <Tab.Navigator screenOptions={{ tabBarStyle: styles.tabBar }}>
     <Tab.Screen
       name="水分摂取"
-      component={WaterIntake}
+      component={Water_Intake}
       options={{
         title: "",
         headerShown: false,
@@ -40,6 +146,7 @@ const TabNavigator = () => (
     <Tab.Screen
       name="Details"
       component={History}
+      // initialParams={{ onRefresh: () => console.log('Refresh called!') }}
       options={{
         title: "",
         headerShown: false,

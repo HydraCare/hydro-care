@@ -14,6 +14,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
 } from "firebase/auth";
+import Header from "../header";
 
 const ChangePassword: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -73,51 +74,53 @@ const ChangePassword: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Text style={styles.title}>パスワード変更</Text>
+    <View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>現在のパスワード</Text>
-          <TextInput
-            style={styles.input}
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-            placeholder="現在のパスワードを入力"
-            secureTextEntry
-          />
+      <Header title="パスワード変更" back="Back" onBackPress={onGoBack} />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          <View style={styles.formContainer}>
+            <Text style={styles.label}>現在のパスワード</Text>
+            <TextInput
+              style={styles.input}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholder="現在のパスワードを入力"
+              secureTextEntry
+            />
 
-          <Text style={styles.label}>新しいパスワード</Text>
-          <TextInput
-            style={styles.input}
-            value={newPassword}
-            onChangeText={setNewPassword}
-            placeholder="新しいパスワードを入力"
-            secureTextEntry
-          />
+            <Text style={styles.label}>新しいパスワード</Text>
+            <TextInput
+              style={styles.input}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="新しいパスワードを入力"
+              secureTextEntry
+            />
 
-          <Text style={styles.label}>新しいパスワード（確認）</Text>
-          <TextInput
-            style={styles.input}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="新しいパスワードを再入力"
-            secureTextEntry
-          />
+            <Text style={styles.label}>新しいパスワード（確認）</Text>
+            <TextInput
+              style={styles.input}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="新しいパスワードを再入力"
+              secureTextEntry
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.changeButton}
+            onPress={handlePasswordChange}
+          >
+            <Text style={styles.changeButtonText}>パスワードを変更</Text>
+          </TouchableOpacity>
+
+          {/* <TouchableOpacity style={styles.backButton} onPress={onGoBack}>
+            <Text style={styles.backButtonText}>戻る</Text>
+          </TouchableOpacity> */}
         </View>
-
-        <TouchableOpacity
-          style={styles.changeButton}
-          onPress={handlePasswordChange}
-        >
-          <Text style={styles.changeButtonText}>パスワードを変更</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.backButton} onPress={onGoBack}>
-          <Text style={styles.backButtonText}>戻る</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 

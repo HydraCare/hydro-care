@@ -9,6 +9,7 @@ import {
   TouchableNativeFeedback,
   TouchableHighlight,
   Alert,
+  ScrollView,
 } from "react-native";
 import Header from "../header";
 import Profile from "./profile";
@@ -86,99 +87,100 @@ const Setting: React.FC<{
       {/* Header */}
       <Header title="設定" />
       {/* Profile Section */}
-      <TouchableOpacity onPress={onNavigate} style={styles.settingSection}>
-        <Text style={styles.sectionTitle}>プロフィール</Text>
-        {/* <TouchableOpacity onPress={onNavigate}>
+      <ScrollView>
+        <TouchableOpacity onPress={onNavigate} style={styles.settingSection}>
+          <Text style={styles.sectionTitle}>プロフィール</Text>
+          {/* <TouchableOpacity onPress={onNavigate}>
                     <Text style={styles.buttonText}>IDで追加する</Text>
                 </TouchableOpacity> */}
-        <View style={styles.profileSection}>
-          {loading ? (
-            <Text>プロフィールを読み込んでいます...</Text>
-          ) : (
+          <View style={styles.profileSection}>
+            {loading ? (
+              <Text>プロフィールを読み込んでいます...</Text>
+            ) : (
+              <>
+                <Image
+                  source={require("@/assets/images/dittrau.png")}
+                  style={styles.icon}
+                />
+                <View style={styles.profileDetails}>
+                  <Text
+                    style={styles.profileText}
+                  >{`名前: ${profile.name}`}</Text>
+                  <Text style={styles.profileText}>{`ID: ${profile.id}`}</Text>
+                  <Text
+                    style={styles.profileText}
+                  >{`毎日の目標: ${profile.waterGoal}ml`}</Text>
+                </View>
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
+        {/* Notification Settings Section */}
+        <View style={styles.settingSection}>
+          <View style={styles.settingItem}>
+            <Text style={styles.sectionTitle}>通知</Text>
+            <Switch
+              value={isNotificationEnabled}
+              onValueChange={toggleNotification}
+              trackColor={{ false: "#ccc", true: "#4CAF50" }}
+            />
+          </View>
+          {isNotificationEnabled && (
             <>
-              <Image
-                source={require("@/assets/images/dittrau.png")}
-                style={styles.icon}
-              />
-              <View style={styles.profileDetails}>
-                <Text
-                  style={styles.profileText}
-                >{`名前: ${profile.name}`}</Text>
-                <Text style={styles.profileText}>{`ID: ${profile.id}`}</Text>
-                <Text
-                  style={styles.profileText}
-                >{`毎日の目標: ${profile.waterGoal}ml`}</Text>
-              </View>
+              <TouchableOpacity
+                onPress={goToNotificationPage}
+                style={styles.settingSection}
+              >
+                <View style={styles.settingItem}>
+                  <Text style={styles.settingLabel}>水分不足の場合</Text>
+                  <Image
+                    source={require("@/assets/images/angle-right.png")}
+                    style={styles.angle_right}
+                  />
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={onNavigateToDrinking}
+                style={styles.settingSection}
+              >
+                <View style={styles.settingItem}>
+                  <Text style={styles.settingLabel}>飲み過ぎの場合</Text>
+                  <Image
+                    source={require("@/assets/images/angle-right.png")}
+                    style={styles.angle_right}
+                  />
+                </View>
+              </TouchableOpacity>
             </>
           )}
         </View>
-      </TouchableOpacity>
-      {/* Notification Settings Section */}
-      <View style={styles.settingSection}>
-        <View style={styles.settingItem}>
-          <Text style={styles.sectionTitle}>通知</Text>
-          <Switch
-            value={isNotificationEnabled}
-            onValueChange={toggleNotification}
-            trackColor={{ false: "#ccc", true: "#4CAF50" }}
-          />
+        <View style={styles.settingSection}>
+          <Text style={styles.sectionTitle}>ユーザー情報</Text>
+          {/* メールアドレス変更 */}
+          <TouchableOpacity
+            onPress={onNavigateToEmail}
+            style={styles.settingItem}
+          >
+            <Text style={styles.settingLabel}>メールアドレス変更</Text>
+            <Image
+              source={require("@/assets/images/angle-right.png")}
+              style={styles.angle_right}
+            />
+          </TouchableOpacity>
+          {/* パスワード変更 */}
+          <TouchableOpacity
+            onPress={onNavigateToPassword}
+            style={styles.settingItem}
+          >
+            <Text style={styles.settingLabel}>パスワード変更</Text>
+            <Image
+              source={require("@/assets/images/angle-right.png")}
+              style={styles.angle_right}
+            />
+          </TouchableOpacity>
         </View>
-        {isNotificationEnabled && (
-          <>
-            <TouchableOpacity
-              onPress={goToNotificationPage}
-              style={styles.settingSection}
-            >
-              <View style={styles.settingItem}>
-                <Text style={styles.settingLabel}>水分不足の場合</Text>
-                <Image
-                  source={require("@/assets/images/angle-right.png")}
-                  style={styles.angle_right}
-                />
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={onNavigateToDrinking}
-              style={styles.settingSection}
-            >
-              <View style={styles.settingItem}>
-                <Text style={styles.settingLabel}>飲み過ぎの場合</Text>
-                <Image
-                  source={require("@/assets/images/angle-right.png")}
-                  style={styles.angle_right}
-                />
-              </View>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-      <View style={styles.settingSection}>
-        <Text style={styles.sectionTitle}>ユーザー情報</Text>
-        {/* メールアドレス変更 */}
-        <TouchableOpacity
-          onPress={onNavigateToEmail}
-          style={styles.settingItem}
-        >
-          <Text style={styles.settingLabel}>メールアドレス変更</Text>
-          <Image
-            source={require("@/assets/images/angle-right.png")}
-            style={styles.angle_right}
-          />
-        </TouchableOpacity>
-        {/* パスワード変更 */}
-        <TouchableOpacity
-          onPress={onNavigateToPassword}
-          style={styles.settingItem}
-        >
-          <Text style={styles.settingLabel}>パスワード変更</Text>
-          <Image
-            source={require("@/assets/images/angle-right.png")}
-            style={styles.angle_right}
-          />
-        </TouchableOpacity>
-      </View>
-
+      </ScrollView>
       {/* Password and Email Settings Section */}
       {/* { <View style={styles.changeSettings}>
                 <TouchableOpacity style={styles.changeButton}>
@@ -186,6 +188,7 @@ const Setting: React.FC<{
                 </TouchableOpacity>
             </View> } */}
     </View>
+
   );
 };
 const SettingApp: React.FC = () => {

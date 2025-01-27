@@ -8,14 +8,14 @@ interface BluetoothModalProps {
     visible: boolean;
     onClose: () => void;
     onConnect: () => void;
-    onDataUpdate: (data: number[]) => void; // Callback để gửi dữ liệu
+    onDataUpdate: (data: number) => void;
 }
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
 const SERVICE_UUID = '7A0247E7-8E88-409B-A959-AB5092DDB03E';
 const CHARACTERISTIC_UUID = '82258BAA-DF72-47E8-99BC-B73D7ECD08A5';
-
+let total = 0;
 const BluetoothModal: React.FC<BluetoothModalProps> = ({ visible, onClose, onConnect, onDataUpdate }) => {
     const [isScanning, setIsScanning] = useState(false);
     const [devices, setDevices] = useState<any[]>([]);
@@ -43,14 +43,26 @@ const BluetoothModal: React.FC<BluetoothModalProps> = ({ visible, onClose, onCon
             console.log('Scan stopped');
             setIsScanning(false);
         };
-
         const handleUpdateValue = ({ value }: { value: number[] }) => {
-            console.log('Received Dataa:', value);
-            // setSensorData(value);
-            onDataUpdate(value);
-            // setSensorData1(value)
-            console.log("data", value[0])
+            let intWeight = value[0]; // 単一バイトの値をそのまま使用
+            let doubledWeight = value[1] * 256;
+            let tripletWeight = value[2] * 65536;
+            let quadrupletWeight = value[3] * 16777216;  // 256^3
+            total = intWeight + doubledWeight + tripletWeight + quadrupletWeight;
+            console.log('Received Data:', value);
+            console.log('send Total:', total);  // 足りなければ計算結果を表示
+            onDataUpdate(total);
+
+            // setSensorData(value); // 必要に応じてそのまま保存
         };
+        // const handleUpdateValue = ({ value }: { value: number[] }) => {
+        //     console.log('Received Dataa:', value);
+        //     // setSensorData(value);
+        //     onDataUpdate(value);
+        //     // setSensorData1(value)
+        //     console.log("data", value[0])
+        // };
+
         bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
         bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan);
         bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValue);

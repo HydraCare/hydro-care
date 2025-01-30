@@ -1,29 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from 'react-native';
 import Header from '../header';
-const AddFriend: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
+import { arrayUnion, doc, getFirestore, updateDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { firestore } from './firebase';
+// const AddFriend: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
+const AddFriend: React.FC<{
+    onFriendAdded: () => void;
+    onGoBack: () => void;
+}> = ({ onFriendAdded, onGoBack }) => {
     const [id, setId] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
-    const follow = [
-        { Name: 'tomo-tin', id: '1001', water: '2500 ', image: require('@/assets/images/image.jpg') },
-        { Name: 'Trang', id: '1002', water: '2600 ', image: require('@/assets/images/dittrau.png') },
-        { Name: 'Fukuda-tin', id: '1003', water: '2700 ', image: require('@/assets/images/dittrau.png') },
-    ];
+    const [friendId, setFriendId] = useState("");
+    const [userId, setUserId] = useState<string | null>(null);
+
     const handleBack = () => {
         console.log("aa")
         onGoBack()
     }
-    useEffect(() => {
-        if (id.trim() === '') {
-            setSearchResults([]);
+    // useEffect(() => {
+    //     const db = getFirestore();
+    //     const userRef = doc(db,firestore, "users");
+    //     console.log(userRef)
+    //     const auth = getAuth();
+    //     const currentUser = auth.currentUser;
+    //     if (currentUser) {
+    //         setUserId(currentUser.uid);
+    //     }
+    // }, []);
+    const handleAddFriend = async () => {
+        if (!friendId.trim()) {
+            Alert.alert("エラー", "フレンドIDを入力してください。");
             return;
         }
-        const results = follow.filter((log) =>
-            log.id.includes(id) || log.Name.toLowerCase().includes(id.toLowerCase())
-        );
 
-        setSearchResults(results); // Cập nhật danh sách kết quả tìm kiếm
-    }, [id]); // Tự động tìm kiếm khi id thay đổi
+        if (!userId) {
+            Alert.alert("エラー", "ユーザーがログインしていません。");
+            return;
+        }
+
+        try {
+            const db = getFirestore();
+            const userDocRef = doc(db, "users", userId);
+
+            await updateDoc(userDocRef, {
+                friends: arrayUnion(friendId),
+            });
+
+            Alert.alert("成功", "フレンドが追加されました！");
+            setFriendId("");
+            onFriendAdded();
+        } catch (error) {
+            console.error("Error adding friend:", error);
+            Alert.alert("エラー", "フレンドの追加に失敗しました。");
+        }
+    };
 
     return (
 
@@ -52,7 +83,7 @@ const AddFriend: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
                                     <Text>ID : {log.id}</Text>
                                 </View>
                             </View>
-                            <TouchableOpacity style={styles.add_button}>
+                            <TouchableOpacity style={styles.add_button} onPress={handleAddFriend}>
                                 <Text style={styles.buttonText}>追加</Text>
                             </TouchableOpacity>
                         </View>

@@ -4,7 +4,7 @@ import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import Header from '../header';
 import { getAuth } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, getFirestore, query, setDoc, Timestamp, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, onSnapshot, query, setDoc, Timestamp, where } from 'firebase/firestore';
 interface Log {
     id: string;
     waterDrunk: number;
@@ -20,14 +20,15 @@ const WaterIntakeHistory: React.FC = () => {
     const [userId, setUserId] = useState(""); // State for user ID
     const [results, setResults] = useState<Log[]>([]);
     const today = new Date().toISOString().split("T")[0];
-    const [week_Data, setWeek_Data] = useState<{
+    const [monthlyTotal, setMonthlyTotal] = useState(0);
+    const [day_Data, setDay_Data] = useState<{
         labels: string[];
         datasets: { data: number[] }[];
     }>({
         labels: [],
         datasets: [{ data: [] }],
     });
-    const [waterData, setWaterData] = useState<{
+    const [week_Data, setWeek_Data] = useState<{
         labels: string[];
         datasets: { data: number[] }[];
     }>({
@@ -41,13 +42,13 @@ const WaterIntakeHistory: React.FC = () => {
         labels: [],
         datasets: [{ data: [] }],
     });
-    const [year_Data, setYear_Data] = useState<{
-        labels: string[];
-        datasets: { data: number[] }[];
-    }>({
-        labels: [],
-        datasets: [{ data: [] }],
-    });
+    // const [year_Data, setYear_Data] = useState<{
+    //     labels: string[];
+    //     datasets: { data: number[] }[];
+    // }>({
+    //     labels: [],
+    //     datasets: [{ data: [] }],
+    // });
     const [graphData, setGraphData] = useState<{
         labels: string[];
         datasets: { data: number[] }[];
@@ -55,10 +56,12 @@ const WaterIntakeHistory: React.FC = () => {
         labels: [],
         datasets: [{ data: [] }],
     });
+    const [hasTabChanged, setHasTabChanged] = useState(false);
     useEffect(() => {
         const fetchData = async () => {
             const auth = getAuth();
             const user = auth.currentUser;
+
             if (user) {
                 setUserId(user.uid);
                 const db = getFirestore();
@@ -66,33 +69,41 @@ const WaterIntakeHistory: React.FC = () => {
                 targetDateStart.setHours(0, 0, 0, 0);
                 const targetDateEnd = new Date(today);
                 targetDateEnd.setHours(23, 59, 59, 999);
+
                 const logsRef = collection(db, "users", user.uid, "oneDayLog");
                 const targetDateStartTimestamp = Timestamp.fromDate(targetDateStart);
                 const targetDateEndTimestamp = Timestamp.fromDate(targetDateEnd);
+
                 const q = query(
                     logsRef,
                     where("drunkTime", ">=", targetDateStartTimestamp),
                     where("drunkTime", "<=", targetDateEndTimestamp)
                 );
-                const querySnapshot = await getDocs(q);
 
-                const fetchedResults: Log[] = querySnapshot.docs.map((doc) => {
-                    const docData = doc.data();
-                    return {
-                        id: doc.id,
-                        waterDrunk: docData.waterDrunk,
-                        day: docData.day,
-                        hour: docData.hour,
-                        minute: docData.minute,
-                        Genre: docData.Genre,
-                    };
+                // real time
+                const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                    const fetchedResults: Log[] = querySnapshot.docs.map((doc) => {
+                        const docData = doc.data();
+                        return {
+                            id: doc.id,
+                            waterDrunk: docData.waterDrunk,
+                            day: docData.day,
+                            hour: docData.hour,
+                            minute: docData.minute,
+                            Genre: docData.Genre,
+                        };
+                    });
+
+                    // Gọi các hàm xử lý sau khi dữ liệu thay đổi
+                    setResults(fetchedResults);
+
+                    day_update();
+                    week_update();
+                    month_update();
                 });
 
-                processChartData(fetchedResults)
-                setResults(fetchedResults);
-                week_update();
-                //moth
-                month_update();
+                // Cleanup subscription khi component unmount
+                return () => unsubscribe();
             } else {
                 Alert.alert("Error", "User is not logged in.");
             }
@@ -100,13 +111,27 @@ const WaterIntakeHistory: React.FC = () => {
 
         fetchData();
     }, [today]);
-    console.log("total result", results)
+    // console.log("total result", results)
     //week graph
 
+    const day_update = async () => {
+        const db = getFirestore();
+
+        const { startDate } = getWeekDateRange();
+        const dayData: number[] = [];
+        const filteredData = processDataForTab(results, "day");
+        // useEffect();
+        setGraphData(filteredData);
+        if (!hasTabChanged) {
+            // handleTabChange("day");
+            setHasTabChanged(true); // Đánh dấu là đã chạy
+        }
+
+    };
     const week_update = async () => {
         const db = getFirestore();
         const week = ["月", "火", "水", "木", "金", "土", "日"];
-        const { startDate } = getWeekDateRange(); // Sử dụng hàm tính ngày tuần
+        const { startDate } = getWeekDateRange();
         const weekData: number[] = [];
 
         try {
@@ -126,10 +151,17 @@ const WaterIntakeHistory: React.FC = () => {
             setWeek_Data({ labels: week, datasets: [{ data: new Array(7).fill(0) }] }); // Trường hợp lỗi
         }
     };
+
     const month_update = async () => {
         const db = getFirestore();
         const { startDate, endDate } = getWeekDateRange();
         const month = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+
+        if (!userId) {
+            console.log("Error: userId is not defined desu");
+            return;
+        }
+
         try {
             const totalDaysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
             let monthlyTotal = 0;
@@ -139,20 +171,24 @@ const WaterIntakeHistory: React.FC = () => {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(i);
                 const formattedDate = formatDateToDocument(currentDate);
+
                 const docRef = doc(db, "users", userId, "oneDayAmount", formattedDate);
                 const docSnap = await getDoc(docRef);
+
                 const dailyAmount = docSnap.exists() ? docSnap.data()?.AmountWaterDrunk ?? 0 : 0;
                 monthlyTotal += dailyAmount;
                 monthData.push(dailyAmount);
             }
+
             setMouth_Data({ labels: month, datasets: [{ data: [monthlyTotal] }] });
-            console.log("total mouth", monthlyTotal)
+            setMonthlyTotal(monthlyTotal);
+            console.log("Total month amount:", monthlyTotal);
         } catch (error) {
             console.error("Error fetching logs from Firestore2:", error);
 
             setMouth_Data({ labels: month, datasets: [{ data: [0] }] });
         }
-    }
+    };
 
     // 今日のデータ
     // console.log("results", results)
@@ -195,11 +231,10 @@ const WaterIntakeHistory: React.FC = () => {
     };
     //グラフ処理
     const handleTabChange = async (tab: 'day' | 'week' | 'month') => {
-
-        setActiveTab(tab);
-        const filteredData = processDataForTab(results, tab);
-        // useEffect();
-        setGraphData(filteredData);
+        if (tab == 'day') {
+            setActiveTab(tab);
+            day_update();
+        }
 
         if (tab == 'week') {
             setActiveTab(tab);
@@ -226,6 +261,7 @@ const WaterIntakeHistory: React.FC = () => {
             borderRadius: 5,
         },
     };
+
     const processDataForTab = (logs: Log[], tab: 'day' | 'week' | 'month') => {
         switch (tab) {
             case 'day':
@@ -234,15 +270,15 @@ const WaterIntakeHistory: React.FC = () => {
 
             case 'month':
 
-                const monthData = logs.reduce((acc, log) => {
-                    const date = log.day;
-                    acc[date] = (acc[date] || 0) + log.waterDrunk;
-                    return acc;
-                }, {} as Record<string, number>);
-                return {
-                    labels: Object.keys(monthData),
-                    datasets: [{ data: Object.values(monthData) }],
-                };
+            // const monthData = logs.reduce((acc, log) => {
+            //     const date = log.day;
+            //     acc[date] = (acc[date] || 0) + log.waterDrunk;
+            //     return acc;
+            // }, {} as Record<string, number>);
+            // return {
+            //     labels: Object.keys(monthData),
+            //     datasets: [{ data: Object.values(monthData) }],
+            // };
             // case 'year':
             //     const yearData = logs.reduce((acc, log) => {
             //         const month = new Date(log.day).getMonth() + 1;
@@ -274,12 +310,6 @@ const WaterIntakeHistory: React.FC = () => {
         endDate.setDate(today.getDate() + diff + 6);
 
         return { startDate, endDate };
-    };
-    const getMonthDateRange = () => {
-        const now = new Date();
-        const startDate1 = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endDate2 = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        return { startDate1, endDate2 };
     };
     // const dataToDisplay = chartData[activeTab];
     return (
@@ -345,7 +375,6 @@ const WaterIntakeHistory: React.FC = () => {
                 />
 
                 {/* 合計 */}
-
                 <View style={styles.summaryContainer}>
 
                     {activeTab === 'week' ? (() => {
@@ -355,7 +384,13 @@ const WaterIntakeHistory: React.FC = () => {
                             </Text>
                         );
                     })() : null}
-
+                    {activeTab === 'month' ? (() => {
+                        return (
+                            <Text style={styles.summaryText}>
+                                今月の合計：{monthlyTotal} ml
+                            </Text>
+                        );
+                    })() : null}
                     <Text style={styles.summaryText}>
                         本日の合計 : {totalDay} ml
                     </Text>

@@ -168,22 +168,22 @@ const Water_Intake = () => {
   };
   console.log("飲んだ量:", blue_data2);
   //引く処理
-  const subWater = (amountSub: number, data: number) => {
-    // const newCount = count - amountSub; // Tính lượng nước đã uống sau khi trừ đi amountSub
-    const newAmount = amount + amountSub;
-    const newRemaining = dailyGoal - newAmount; // Tính lượng nước còn lại cần uống
+  // const subWater = (amountSub: number, data: number) => {
+  //   // const newCount = count - amountSub; // Tính lượng nước đã uống sau khi trừ đi amountSub
+  //   const newAmount = amount + amountSub;
+  //   const newRemaining = dailyGoal - newAmount; // Tính lượng nước còn lại cần uống
 
-    // Cập nhật trạng thái
-    setAmount(newAmount);
-    setRemaining(newRemaining);
+  //   // Cập nhật trạng thái
+  //   setAmount(newAmount);
+  //   setRemaining(newRemaining);
 
-    // Cập nhật mức nước với animation
-    Animated.timing(waterLevel, {
-      toValue: (blue_data2 / blue_data) * 100, // Tính tỷ lệ phần trăm mức nước
-      duration: 1500, // Thời gian animation
-      useNativeDriver: false, // Không sử dụng native driver vì chúng ta đang thay đổi chiều cao
-    }).start();
-  };
+  //   // Cập nhật mức nước với animation
+  //   Animated.timing(waterLevel, {
+  //     toValue: (blue_data2 / blue_data) * 100, // Tính tỷ lệ phần trăm mức nước
+  //     duration: 1500, // Thời gian animation
+  //     useNativeDriver: false, // Không sử dụng native driver vì chúng ta đang thay đổi chiều cao
+  //   }).start();
+  // };
   Animated.timing(waterLevel2, {
     toValue: (totalDay / dailyGoal) * 100, // Tính tỷ lệ phần trăm
     duration: 1500, // Thời gian animation
@@ -197,7 +197,7 @@ const Water_Intake = () => {
     setBlueData2(0); // Đặt lại lượng nước đã uống
     setBlueData3(0); // Đặt lại lượng nước còn lại
     setWaterLevel(new Animated.Value(0)); // Đặt lại mức nước
-    setWaterLevel2(new Animated.Value(0));
+    // setWaterLevel2(new Animated.Value(0));
     console.log("Reset thành công!");
 
     // // setAmount(0);

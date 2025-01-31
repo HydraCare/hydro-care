@@ -1,25 +1,41 @@
 import { StyleSheet, View, Text, Image, TouchableOpacity, Animated, ScrollView, Modal, TextInput, Button, NativeSyntheticEvent, TextInputChangeEventData, Alert } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import Header from '../header';
-import bluetooth from './bluetooth';
+
 import CalendarPicker from './calender_picker';
 import BluetoothModal from './bluetooth';
 import { getAuth } from 'firebase/auth';
-import { addDoc, collection, doc, getDoc, getFirestore, setDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getFirestore, onSnapshot, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { firestore } from './firebase';
 // import { useSensorData } from './Sensor_Data';
-
+interface Log {
+    id: string;
+    waterDrunk: number;
+    day: string;
+    hour: number;
+    minute: number;
+    Genre: string;
+}
 const Water_Intake = ({ navigation }: { navigation: any }) => {
     const [userId, setUserId] = useState(""); // State for user ID
     const [waterGoal, setWaterGoal] = useState(0); // 目標摂取水分
-    const [bottle, setBottle] = useState(0); //ボトルの初期化 //容量 blue から
     const dailyGoal = 2000;
     const [remaining, setRemaining] = useState(0); //目標の残り水量
+
     const [amount, setAmount] = useState(0); //水の飲んだ量
-    const [botle_rest, setBottle_rest] = useState(0)
+    const [Total_amount, setTotalAmount] = useState(0); //水の飲んだ総合量
+    const [bottle, setBottle] = useState(0); //ボトルの初期化 //容量 blue から
+    const [botle_rest, setBottle_rest] = useState(0)//ボトルの残り水
+    const [bottleRemaining, setBottleRemaining] = useState(bottle);
     const [waterLevel, setWaterLevel] = useState(new Animated.Value(0));
+    const water_Level = useRef(new Animated.Value(0)).current;
     const [sensorData, setSensorData] = useState<number[]>([]);
-    const [blue_boolean, setBlueBloolean] = useState(true); // State for user ID
+    const [blueBoolean, setBlueBoolean] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false); //登録したしてないかの状態
+
+    const [results, setResults] = useState<Log[]>([]);
+    let total = 0;
+    const [totalDay, setTotalDay] = useState(0);
     //firebase関連コード
     useEffect(() => {
         const fetchData = async () => {
@@ -36,23 +52,42 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
             if (userId) {
                 const db = getFirestore();
                 const userRef = doc(db, "users", userId);
-                //一日水分摂取量の処理
+
+                // 一日水分摂取量の処理
                 const day = new Date().getDate();
                 const month = new Date().getMonth() + 1;
                 const year = new Date().getFullYear();
                 const DayLog = `${year}年${month}月${day}日`;
+
+                console.log(DayLog);
+
                 try {
-                    // ユーザーのドキュメント内に「oneDayAmount」サブコレクションを作成
+                    // 「oneDayAmount」サブコレクションを参照
                     const oneDayAmountRef = collection(userRef, "oneDayAmount");
                     const docRef = doc(oneDayAmountRef, DayLog);
-                    await setDoc(docRef, {
-                        AmountWaterDrunk: mount,
+
+                    // リアルタイムリスナーを設定
+                    const unsubscribe = onSnapshot(docRef, async (docSnapshot) => {
+                        if (docSnapshot.exists()) {
+                            const existingData = docSnapshot.data();
+                            setTotalDay(existingData.AmountWaterDrunk || 0); // Update state with real-time data
+                            console.log("リアルタイム更新:", existingData.AmountWaterDrunk);
+                        } else {
+                            // ドキュメントが存在しない場合は新規作成
+                            await setDoc(docRef, {
+                                AmountWaterDrunk: totalDay,
+                                day: DayLog,
+                            });
+                            console.log("新しいドキュメントが作成されました");
+                        }
                     });
-                    console.log("1日水分摂取量のデータが正常にFirestoreに追加されました");
+
+                    // 必要があれば、リスナーを解除するための `unsubscribe` を保存または使用
+                    // return unsubscribe;
                 } catch (error) {
-                    console.error("ドキュメントの追加エラー: ", error);
+                    console.error("リアルタイム更新エラー: ", error);
                 }
-                //login count 合算処理
+
                 try {
                     const userDoc = await getDoc(userRef);
                     if (userDoc.exists()) {
@@ -63,7 +98,6 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
                             loginCount: loginCount,
                         }, { merge: true });
                         console.log("Login count updated successfully.");
-                        // console.log(userDoc.data());
                         setWaterGoal((userDoc.data().waterGoal));
                         setRemaining((userDoc.data().waterGoal))
                     } else {
@@ -75,11 +109,12 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
             }
         };
         fetchData(); // fetchData 呼び出し
-    }, [navigation]);
+    }, [userId]);
     // カレンダー関数
     const [currentDate, setCurrentDate] = useState<string>('');
     const [currentTime, setCurrentTime] = useState<string>('');
     useEffect(() => {
+
         const updateDateTime = () => {
             const date = new Date();
             const dayOfMonth = date.getDate();
@@ -88,14 +123,12 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
             setCurrentTime(timeString);
         };
         updateDateTime();
-        // const intervalId = setInterval(updateDateTime, 60000);
-        // return () => clearInterval(intervalId);
     }, []);
 
     // modal　関数
     const [modalVisible, setModalVisible] = useState(false);
     const [mount, setMount] = useState(200); // Initial amount is 200ml
-    const [waterType, setWaterType] = useState<string>('水'); // Default type of water is 水
+    const [waterType, setWaterType] = useState<string>('お水'); // Default type of water is 水
     const [isEditing, setIsEditing] = useState(false);
     //水分自分で追加する関数
     const handleAmountChange = (value: string) => {
@@ -109,14 +142,6 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
         }
     };
     const [modalBlue, setModalBlue] = useState(false);
-    //bottle 登録関数
-
-    const blue_bottle = (sensorData: number) => {
-        setBlueBloolean(true);
-        console.log("blue から受け取る");//blueのデータ受け取れたら、ここに表示
-        setBottle(1500);
-        // setBottle(sensorData);
-    }
     const bluetooth = () => {
         setModalBlue(!modalBlue);
     }
@@ -124,28 +149,112 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
         console.log("Connecting to Bluetooth device...");
         bluetooth();
     };
-    const handleDataUpdate = (data: number[]) => {
-        if (blue_boolean) {
-            if (data[0]) {
-                setBottle_rest(bottle - data[0])
-                subWater(bottle - data[0]);
-            }
-            console.log("blue0", data[0]);
-            setAmount(data[0]);
+    //bottle 登録関数
+    const handleBluetoothConnection = (initialVolume: number) => {
+        if (initialVolume > 0) {
+            // reset();
+            Animated.timing(waterLevel, {
+                toValue: (totalDay / waterGoal) * 100,
+                duration: 1500, // 
+                useNativeDriver: false,
+            }).start();
+            setBottle(initialVolume); //初期化、最初のボトル体積
+            setAmount(0)
+            setIsInitialized(true);
+            setBottle_rest(initialVolume); // 残りの水 update
+            setWaterLevel(new Animated.Value(0));
+
+            console.log("ボトル登録成功:", initialVolume);
+        } else {
+            Alert.alert("もう一回ボトル登録してください");
         }
     };
-    //reset
-    const reset = (blue_boolean: boolean) => {
-        if (blue_boolean) {
-            setAmount(0);
-            setRemaining(waterGoal);
-            setWaterLevel(new Animated.Value(0));
+    console.log(isInitialized)
+    const handleDataUpdate = (data: number) => {
+        setBottle(data)
+        if (!isInitialized) {
+            console.log("ボトル、まだ登録していません.");
+            return;
         }
-        setBlueBloolean(false);
 
+        if (data > botle_rest) {
+            // 水が急に増えた場合エラー
+            console.log("error data:", data);
+            Alert.alert(
+                "データエラー",
+                "残りの水量が無効です。ボトルを再登録してください。",
+                [{ text: "OK", onPress: () => console.log("アラートを閉じました") }]
+            );
+            return;
+        }
+        if (data > 0 && data <= bottle) {
+            //飲んだ量
+            const drankAmount = botle_rest - data
+            //update
+            setAmount(drankAmount)
+            setBottle_rest(data)
+            update_water(drankAmount);
+            Animated.timing(waterLevel, {
+                toValue: (drankAmount / bottle) * 100,
+                duration: 1500,
+                useNativeDriver: false,
+            }).start();
+            console.log("飲んだ水の量:", drankAmount, "残りの水:", data);
+        } else {
+            console.log("Bluetoothデータが無効:", data);
+        }
+    };
+
+    console.log("飲んだ水の量:", amount, "残りの水:", botle_rest, "総合", totalDay);
+    //reset
+    //飲んだ量をFirebase update
+    const update_water = async (data: number) => {
+        try {
+            setTotalDay(totalDay + data)
+            console.log("data", data);
+            const today = new Date();
+            const day = `${today.getFullYear()}年${String(today.getMonth() + 1).padStart(2, '0')}月${String(today.getDate()).padStart(2, '0')}日`
+            // 送信ロジック（データを保存する、または状態を更新する）
+            // ユーザーのドキュメントへの参照を作成
+            const userRef = doc(firestore, "users", userId); // ユーザードキュメントへの参照
+            // ユーザーのドキュメント内に「onedaylog」サブコレクションを作成
+            const oneDayLogRef = collection(userRef, "oneDayLog");
+            const docRef = doc(oneDayLogRef, today.toISOString());  // currentTimestamp=> date
+            // 「onedaylog」コレクションに新しいドキュメントを作成し、データを追加
+            await setDoc(docRef, {
+                waterDrunk: data,
+                drunkTime: today,
+                day: day,
+                hour: today.getHours(),
+                minute: today.getMinutes(),
+                Genre: waterType
+            });
+            console.log("飲んだ量をFirestoreに追加されました！");
+            //update 総合量
+            const day1 = new Date().getDate();
+            const month = new Date().getMonth() + 1;
+            const year = new Date().getFullYear();
+            const DayLog = `${year}年${month}月${day1}日`;
+            const oneDayAmount = collection(userRef, "oneDayAmount");
+            const docRef_A = doc(oneDayAmount, DayLog);
+            await updateDoc(docRef_A, {
+                AmountWaterDrunk: totalDay + data,
+                // day: DayLog
+            });
+        } catch (error) {
+            console.error("11ドキュメントの追加エラー: ", error);
+        }
+        const waterLevel = useRef(new Animated.Value(0)).current;
+    };
+    const reset = () => {
+        // setAmount(0);
+        // setRemaining(waterGoal);
+        // setBottleRemaining(bottle);
+        setWaterLevel(new Animated.Value(0));
+        console.log('Dữ liệu đã được reset');
     };
     //重さをとる処理
-    console.log("重さ：", sensorData);
+    console.log("重さ：", botle_rest);
     //引く処理
     const subWater = (amountSub: number) => {
         console.log("飲んだ量:", amountSub)
@@ -161,7 +270,6 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
             useNativeDriver: false,
         }).start();
     };
-    console.log(amount);
     //Calendar 関数
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [day, setDay] = useState('');
@@ -171,10 +279,10 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
     const [minute, setMinute] = useState('');
     const handleDateChange = (date: any) => {
         if (!(date instanceof Date)) {
-            date = new Date(date); // Chuyển đổi
+            date = new Date(date);
         }
         setSelectedDate(date);
-        const selectYear = date.getFullYear(); // Sửa tại đây
+        const selectYear = date.getFullYear();
         const selectedDay = date.getDate();
         const selectedMonth = date.getMonth() + 1;
         setDay(selectedDay.toString());
@@ -183,23 +291,7 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
 
         setHour(date.getHours().toString());
         setMinute(date.getMinutes().toString());
-    };
-    // console.log("selected", selectedDate);
-    //飲んだ水量の処理
-    const drunkTime = Timestamp.fromDate(new Date());
-    const Genre = "水";
-    const [amount_water, setAmount_water] = useState(0);
-    const AmountChange = (value: string) => {
-        if (value === "") {
-            setAmount_water(0);
-        } else {
-            const parsedValue = parseInt(value, 10);
-            if (!isNaN(parsedValue)) {
-                setAmount_water(parsedValue);
-            }
-        }
-    };
-    console.log(blue_boolean)
+    }
     const handleSubmit = async () => {
         try {
             const DayLog = `${year}年${month}月${day}日`;
@@ -221,13 +313,41 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
                 minute: minute,
                 Genre: waterType
             });
+            const docRef_Amount = doc(collection(userRef, "oneDayAmount"), DayLog);
+            const docSnap = await getDoc(docRef_Amount);
+            if (docSnap.exists()) {
+                const currentAmount = docSnap.data().AmountWaterDrunk || 0;
+                await updateDoc(docRef_Amount, {
+                    AmountWaterDrunk: currentAmount + mount,
+                });
+                console.log("update AmountWaterDrunk:", currentAmount + mount);
+            } else {
+                await setDoc(docRef, {
+                    AmountWaterDrunk: mount,
+                    day: DayLog
+                });
+                console.log("created AmountWaterDrunk:", mount);
+            }
+            setTotalDay(totalDay + mount)
             console.log("データが正常にFirestoreに追加されました！");
             setModalVisible(false); // 送信後、モーダルを閉じる 
+
         } catch (error) {
             console.error("11ドキュメントの追加エラー: ", error);
         }
-        const waterLevel = useRef(new Animated.Value(0)).current; // Tạo Animated.Value
     };
+    const progressPercentage = waterGoal > 0 ? (totalDay / waterGoal) * 100 : 0;
+
+    Animated.timing(water_Level, {
+        toValue: Math.min(progressPercentage, 100),
+        duration: 1500,
+        useNativeDriver: false,
+    }).start();
+
+    const interpolatedWidth = water_Level.interpolate({
+        inputRange: [0, 100],
+        outputRange: ['0%', '100%'],
+    });
     return (
         <View style={styles.background}>
             <Header title="水分摂取" back='' />
@@ -262,80 +382,55 @@ const Water_Intake = ({ navigation }: { navigation: any }) => {
                     <Text style={styles.goalText}>一日の目標水分摂取 {waterGoal}ml</Text>
 
                     <View style={styles.bottleContainer}>
-                        {/* <Image
-                            source={require('@/assets/images/bottle.png')}
-                            style={styles.bottle}
-                        /> */}
-
                         <Animated.View
                             style={[
                                 styles.water,
                                 {
                                     height: waterLevel.interpolate({
                                         inputRange: [0, 100],
-                                        outputRange: ['100%', '0%'] // Đặt chiều cao của mức nước
+                                        outputRange: botle_rest > 0
+                                            ? ['100%', '0%']
+                                            : ['0%', '100%'],
                                     }),
                                 },
+
                             ]}
                         />
                     </View>
+
                     <Text style={styles.amountText}>容量 : {botle_rest}ml</Text>
-                    {/* <TouchableOpacity onPress={() => addWater(100)} style={styles.addButton}>
-                        <Text style={styles.buttonText}>Add 100ml</Text>
-                    </TouchableOpacity> */}
                     <View style={styles.botle_reset}>
-                        <TouchableOpacity onPress={() => blue_bottle(sensorData[0])} style={styles.addButton}>
+                        <TouchableOpacity onPress={() => handleBluetoothConnection(bottle)} style={styles.addButton}>
                             <Text style={styles.buttonText}>ボトル 登録</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => reset(blue_boolean)} style={styles.resetButton}>
+                        {/* <TouchableOpacity onPress={() => reset()} style={styles.resetButton}>
                             <Text style={styles.buttonText}>Reset</Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                     </View>
-
-                    {/* <View style={styles.test} >
-                        <TextInput
-                            style={styles.input}
-                            keyboardType="numeric"
-                            value={amount_water.toString()}
-                            onChangeText={AmountChange}
-                        />
-                        <TouchableOpacity onPress={() => subWater(amount_water)} style={styles.addButton}>
-                            <Text style={styles.buttonText}>引く</Text>
-                        </TouchableOpacity>
-                    </View> */}
-                    {/* <TouchableOpacity onPress={() => subWater(sensorData[0])} style={styles.addButton}>
-                        <Text style={styles.buttonText}>飲んだ水の量 {sensorData[0]}</Text>
-                    </TouchableOpacity> */}
-
                     <Text style={styles.goalText}>ここに通知が流れる </Text>
 
-
                     <Text style={styles.progressText}>
-                        {amount}ml | {((amount / waterGoal) * 100).toFixed(0)}% 残り: {remaining}ml
+                        飲んだ量: {totalDay}ml | 達成率: {totalDay && waterGoal ? ((totalDay / waterGoal) * 100).toFixed(0) : 0}% |
+                        残り: {remaining - totalDay}ml
                     </Text>
                     <View style={styles.progressContainer}>
                         <Animated.View
                             style={[
                                 styles.progressBar,
-                                {
-                                    width: waterLevel.interpolate({
-                                        inputRange: [0, 100],
-                                        outputRange: ['0%', '100%'],
-                                    }),
-                                },
+                                { width: interpolatedWidth },
                             ]}
                         />
                     </View>
 
                 </View>
             </ScrollView >
-
             <Modal
                 visible={modalVisible}
                 animationType="slide"
                 transparent={true}
                 onRequestClose={() => setModalVisible(false)}
             >
+
                 <View style={styles.modalBackground}>
                     <View style={styles.modalContainer}>
                         <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
@@ -413,11 +508,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#E6F2F9',
         padding: 10,
     },
-    // imageCalender: {
-    //     width: 150,
-    //     height: 40,
-
-    // },
     goalText: {
         fontSize: 20,
         marginBottom: 15,
@@ -470,7 +560,7 @@ const styles = StyleSheet.create({
     // },
     bottleContainer: {
         width: 120,
-        height: 300, // Chiều cao chai nước
+        height: 300,
         justifyContent: 'flex-end',
         alignItems: 'center',
         borderColor: '#000',
@@ -623,10 +713,10 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     botle_reset: {
-        flexDirection: 'row', // Xếp các phần tử theo chiều ngang
-        justifyContent: 'space-between', // Tạo khoảng cách đều giữa các button
-        alignItems: 'center', // Căn giữa theo trục dọc
-        marginTop: 10, // Khoảng cách phía trên
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 10,
         marginBottom: 10
     },
 });

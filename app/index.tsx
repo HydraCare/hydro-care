@@ -191,7 +191,7 @@ const TabNavigator = () => (
     />
     <Tab.Screen
       name="設定"
-      component={test1}
+      component={Setting}
       options={{
         title: "",
         headerShown: false,

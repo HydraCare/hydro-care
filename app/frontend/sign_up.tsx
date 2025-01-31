@@ -35,12 +35,12 @@ const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) =>
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
             const userId = user.uid; // Automatically generated ID
-
+            const today = new Date();
             // Store user data in Firestore
             await setDoc(doc(firestore, "users/" + userId), {
                 email: email,
                 password: password,
-                createdAt: new Date(),
+                createdAt: today,
             });
 
             console.log("User created successfully with ID:", userId);

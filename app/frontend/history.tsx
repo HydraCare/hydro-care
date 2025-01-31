@@ -124,7 +124,7 @@ const WaterIntakeHistory: React.FC = () => {
         setGraphData(filteredData);
         if (!hasTabChanged) {
             // handleTabChange("day");
-            setHasTabChanged(true); // Đánh dấu là đã chạy
+            setHasTabChanged(true);
         }
 
     };
@@ -137,7 +137,7 @@ const WaterIntakeHistory: React.FC = () => {
         try {
             for (let i = 0; i < 7; i++) {
                 const currentDate = new Date(startDate);
-                currentDate.setDate(startDate.getDate() + i); // Tính từng ngày trong tuần
+                currentDate.setDate(startDate.getDate() + i);
                 const formattedDate = formatDateToDocument(currentDate);
                 const docRef = doc(db, "users", userId, "oneDayAmount", formattedDate);
                 const docSnap = await getDoc(docRef);

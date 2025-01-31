@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from 'react-native';
 import Header from '../header';
-import { arrayUnion, doc, getFirestore, updateDoc } from 'firebase/firestore';
+import { arrayUnion, doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { firestore } from './firebase';
+import { set } from 'firebase/database';
 // const AddFriend: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
 const AddFriend: React.FC<{
     onFriendAdded: () => void;
@@ -12,28 +13,89 @@ const AddFriend: React.FC<{
     const [id, setId] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [friendId, setFriendId] = useState("");
+    const [friendList, setFriendList] = useState<string[]>([]);
     const [userId, setUserId] = useState<string | null>(null);
-
+    const [isFriend, setIsFriend] = useState(true)
     const handleBack = () => {
         console.log("aa")
         onGoBack()
     }
-    // useEffect(() => {
-    //     const db = getFirestore();
-    //     const userRef = doc(db,firestore, "users");
-    //     console.log(userRef)
-    //     const auth = getAuth();
-    //     const currentUser = auth.currentUser;
-    //     if (currentUser) {
-    //         setUserId(currentUser.uid);
-    //     }
-    // }, []);
-    const handleAddFriend = async () => {
-        if (!friendId.trim()) {
-            Alert.alert("エラー", "フレンドIDを入力してください。");
+    useEffect(() => {
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            setUserId(currentUser.uid);
+        }
+    }, []);
+    useEffect(() => {
+        if (id.trim() === "") {
+            setSearchResults([]);
             return;
         }
 
+        const fetchUser = async () => {
+            try {
+                // Lấy thông tin người dùng theo ID đã nhập
+                const db = getFirestore();
+                const userRef = doc(db, "users", id);
+                const docSnap = await getDoc(userRef);
+
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    setSearchResults([{
+                        id: docSnap.id,
+                        Name: userData.name || "Unknown",
+                        image: userData.image || null
+                    }]);
+                } else {
+                    setSearchResults([]);
+                }
+            } catch (error) {
+                console.error("検索エラー:", error);
+                setSearchResults([]);
+            }
+
+            try {
+                if (userId) {
+                    const db = getFirestore();
+                    const userRef = doc(db, "users", userId);
+                    const docSnap = await getDoc(userRef);
+
+                    if (docSnap.exists()) {
+                        const userData = docSnap.data();
+                        const friends = userData.friends || [];
+
+                        if (friends.includes(id)) {
+                            console.log("co")
+                            setIsFriend(true)
+                            setSearchResults(prevResults => {
+                                return prevResults.map(result =>
+                                    result.id === id
+
+                                        ? { ...result }
+                                        : result
+                                );
+                            });
+                        } else {
+                            console.log("k co")
+                            setIsFriend(false)
+                            setSearchResults(prevResults => {
+                                return prevResults.map(result =>
+                                    result.id === id
+                                        ? { ...result }
+                                        : result
+                                );
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("エラー:", error);
+            }
+        };
+        fetchUser();
+    }, [id])
+    const handleAddFriend = async (friendId: string) => {
         if (!userId) {
             Alert.alert("エラー", "ユーザーがログインしていません。");
             return;
@@ -48,14 +110,13 @@ const AddFriend: React.FC<{
             });
 
             Alert.alert("成功", "フレンドが追加されました！");
-            setFriendId("");
+            setFriendList([...friendList, friendId]);
             onFriendAdded();
         } catch (error) {
             console.error("Error adding friend:", error);
             Alert.alert("エラー", "フレンドの追加に失敗しました。");
         }
     };
-
     return (
 
         <View style={styles.container}>
@@ -72,31 +133,57 @@ const AddFriend: React.FC<{
             </View>
             <View style={styles.hr} />
             <ScrollView style={styles.logsContainer}>
-                {/* Hiển thị các kết quả tìm kiếm */}
                 {searchResults.length > 0 ? (
-                    searchResults.map((log, index) => (
-                        <View key={index} style={styles.logItem}>
-                            <View style={styles.infoContainer}>
-                                <Image source={log.image} style={styles.icon} />
-                                <View style={styles.textContainer}>
-                                    <Text>Name : {log.Name}</Text>
-                                    <Text>ID : {log.id}</Text>
+                    searchResults.map((user, index) => {
+                        return (
+                            <View key={index} style={styles.logItem}>
+                                <View style={styles.infoContainer}>
+                                    {user.image ? (
+                                        <Image source={{ uri: user.image }} style={styles.icon} />
+                                    ) : (
+                                        <Image source={require("@/assets/images/icon_user.png")} style={styles.icon} />
+                                    )}
+                                    <View style={styles.textContainer}>
+                                        <Text>Name : {user.Name}</Text>
+                                        <Text>ID : {user.id}</Text>
+                                    </View>
                                 </View>
+
+                                {isFriend ? (
+
+                                    <View style={styles.label_text}>
+                                        <Text style={styles.buttonText}>Following</Text>
+                                    </View>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={styles.add_button}
+                                        onPress={() => handleAddFriend(user.id)}
+                                    >
+                                        <Text style={styles.buttonText}>Follow</Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
-                            <TouchableOpacity style={styles.add_button} onPress={handleAddFriend}>
-                                <Text style={styles.buttonText}>追加</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ))
+                        );
+                    })
                 ) : (
                     <Text style={styles.noResultText}>該当する結果がありません</Text>
                 )}
+
             </ScrollView>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
+    label_text: {
+        backgroundColor: '#ADD8E6',
+        paddingVertical: 10,
+        // marginRight: 20,
+        paddingHorizontal: 10,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     container: {
         flex: 1,
         backgroundColor: '#E6F2F9',
@@ -141,13 +228,14 @@ const styles = StyleSheet.create({
     },
     logItem: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        // justifyContent: 'space-between',
         padding: 10,
         marginBottom: 10,
         backgroundColor: '#D9D9D9',
         borderRadius: 10,
     },
     infoContainer: {
+        width: "75%",
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -163,8 +251,9 @@ const styles = StyleSheet.create({
     add_button: {
         backgroundColor: '#ADD8E6',
         paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 40,
+        marginRight: 10,
+        paddingHorizontal: 15,
+        borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -175,7 +264,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     buttonText: {
-        fontSize: 18,
+        fontSize: 15,
         color: 'black',
     },
     button: {
@@ -185,5 +274,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
 });
+
 
 export default AddFriend;

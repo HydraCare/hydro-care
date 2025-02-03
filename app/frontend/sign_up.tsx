@@ -15,6 +15,7 @@ import Svg, { Path } from "react-native-svg";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, firestore } from "./firebase"; // Ensure this is correctly imported
 import { doc, setDoc } from "firebase/firestore"; // Use Firestore for saving user data
+import LoginScreenProps from "./interface";
 
 const { width } = Dimensions.get("window");
 
@@ -35,12 +36,12 @@ const Register: React.FC<LoginScreenProps> = ({ navigation, onLoginSuccess }) =>
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
             const userId = user.uid; // Automatically generated ID
-
+            const today = new Date();
             // Store user data in Firestore
             await setDoc(doc(firestore, "users/" + userId), {
                 email: email,
                 password: password,
-                createdAt: new Date(),
+                createdAt: today,
             });
 
             console.log("User created successfully with ID:", userId);

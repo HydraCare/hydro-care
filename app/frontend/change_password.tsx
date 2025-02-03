@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   changeButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#4CAEE8",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",

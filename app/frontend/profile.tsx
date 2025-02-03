@@ -13,15 +13,20 @@ import Header from "../header";
 import * as ImagePicker from "expo-image-picker";
 import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import Clipboard from "@react-native-clipboard/clipboard";
 const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
   const handleBack = () => {
     onGoBack();
   };
-
+  const copyToClipboard = () => {
+    Clipboard.setString(profile.id);
+    console.log("コピーしました");
+  };
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({
     name: "",
     id: "",
+    gender: "",
     waterGoal: 0,
     imageUrl: "", // プロフィール画像のURL
   });
@@ -53,6 +58,7 @@ const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
           setProfile({
             name: data.name || "",
             id: profileSnap.id || "",
+            gender: data.gender || "",
             waterGoal: data.waterGoal || 0,
             imageUrl: data.imageUrl || "", // Firestore に保存された画像URL
           });
@@ -190,7 +196,17 @@ const Profile: React.FC<{ onGoBack: () => void }> = ({ onGoBack }) => {
                     </TouchableOpacity>
                   </View>
                 )}
-                <Text style={styles.profileText}>{`ID: ${profile.id}`}</Text>
+                <Text style={styles.profileText}>{`ID: ${profile.id.slice(0, 5)}...`}
+
+                  <TouchableOpacity onPress={copyToClipboard} style={styles.copyButton}>
+                    <Text style={styles.copyButtonText}>📋</Text>
+                  </TouchableOpacity>
+                </Text>
+                <Text style={styles.profileText}>{`性別: ${profile.gender}`}
+
+
+                </Text>
+
               </View>
             </>
           )}
@@ -358,6 +374,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-start",
   },
+  copyButton: {
+    backgroundColor: "#fff",
+    padding: 0,
+    borderRadius: 5,
+  },
+  copyButtonText: { color: "#fff", fontSize: 14 },
 });
 
 export default Profile;

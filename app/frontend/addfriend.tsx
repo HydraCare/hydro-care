@@ -145,7 +145,7 @@ const AddFriend: React.FC<{
                                     )}
                                     <View style={styles.textContainer}>
                                         <Text>Name : {user.Name}</Text>
-                                        <Text>ID : {user.id}</Text>
+                                        <Text>ID : {user.id.slice(0, 5)}...</Text>
                                     </View>
                                 </View>
 

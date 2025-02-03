@@ -8,6 +8,7 @@ import { firestore, auth } from './firebase'; // 修正: firebase.tsxのイン�
 import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import * as Notifications from "expo-notifications";
 import { query, orderBy, limit } from 'firebase/firestore';
+import { getAuth, signOut } from 'firebase/auth';
 
 const WATER_THRESHOLD = 301; // 水分摂取量の閾値
 
@@ -25,13 +26,14 @@ const Setting: React.FC<{
   onNavigateToEmail: () => void;
   onNavigateToPassword: () => void;
   onNavigate: () => void;
-}> = ({ onNavigateToEmail, onNavigateToPassword, onNavigate }) => {
+  onNavigateLogin: () => void;
+}> = ({ onNavigateToEmail, onNavigateToPassword, onNavigate, onNavigateLogin }) => {
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({ name: '', id: '', waterGoal: 0 });
 
   const toggleNotification = () => setIsNotificationEnabled(!isNotificationEnabled);
-
+  // const navigation = useNavigation();
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -62,23 +64,22 @@ const Setting: React.FC<{
         setLoading(false);
       }
     };
-
     const setupRealtimeListener = () => {
       const user = auth.currentUser;
       if (!user) return;
-    
+
       const logCollectionRef = collection(firestore, `users/${user.uid}/oneDayLog`);
-    
+
       // drunkTime を基準に最新の1件を取得するクエリ
       const latestLogQuery = query(logCollectionRef, orderBy("drinktime", "desc"), limit(1));
-    
+
       onSnapshot(latestLogQuery, (querySnapshot) => {
         if (!querySnapshot.empty) {
           const latestDoc = querySnapshot.docs[0];
           const data = latestDoc.data();
           console.log("最新のドキュメントID:", latestDoc.id);
           console.log("最新のドキュメントデータ:", data);
-    
+
           if (data.water > WATER_THRESHOLD) {
             sendNotification(data.water);
           }
@@ -89,8 +90,18 @@ const Setting: React.FC<{
     fetchProfile();
     setupRealtimeListener();
   }, []);
+  const handleLogout = async () => {
+    try {
+      const auth = getAuth();
+      await signOut(auth);
+      Alert.alert("ログアウトしました", "正常にログアウトされました。");
+      onNavigateLogin();
+    } catch (error) {
+      console.error("ログアウトエラー:", error);
+      Alert.alert("エラー", "ログアウトに失敗しました。");
+    }
+  };
 
-  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
@@ -105,7 +116,7 @@ const Setting: React.FC<{
               <Image source={require('@/assets/images/dittrau.png')} style={styles.icon} />
               <View style={styles.profileDetails}>
                 <Text style={styles.profileText}>{`名前: ${profile.name}`}</Text>
-                <Text style={styles.profileText}>{`ID: ${profile.id}`}</Text>
+                <Text style={styles.profileText}>{`ID: ${profile.id.slice(0, 5)}...`}</Text>
                 <Text style={styles.profileText}>{`毎日の目標: ${profile.waterGoal}ml`}</Text>
               </View>
             </>
@@ -119,7 +130,7 @@ const Setting: React.FC<{
           <Switch
             value={isNotificationEnabled}
             onValueChange={toggleNotification}
-            trackColor={{ false: "#ccc", true: "#4CAF50" }}
+            trackColor={{ false: "#ccc", true: "#4CAEE8" }}
           />
         </View>
       </View>
@@ -130,6 +141,10 @@ const Setting: React.FC<{
           <Text style={styles.settingLabel}>パスワード変更</Text>
           <Image source={require('@/assets/images/angle-right.png')} style={styles.angle_right} />
         </TouchableOpacity>
+        <TouchableOpacity style={styles.settingItem} onPress={handleLogout}>
+          <Text style={styles.settingLabel}>ログアウト</Text>
+          <Image source={require('@/assets/images/angle-right.png')} style={styles.angle_right} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -137,7 +152,7 @@ const Setting: React.FC<{
 
 const SettingApp: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState('Setting');
-
+  const navigateLogin = () => setCurrentScreen('login');
   const navigateToProfile = () => setCurrentScreen('Profile');
   const navigateToChangePassword = () => setCurrentScreen('ChangePassword');
   const goBackToSetting = () => setCurrentScreen('Setting');
@@ -146,9 +161,10 @@ const SettingApp: React.FC = () => {
     <View style={styles.container}>
       {currentScreen === 'Setting' && (
         <Setting
-          onNavigateToEmail={() => {}}
+          onNavigateToEmail={() => { }}
           onNavigateToPassword={navigateToChangePassword}
           onNavigate={navigateToProfile}
+          onNavigateLogin={navigateLogin}
         />
       )}
       {currentScreen === 'Profile' && <Profile onGoBack={goBackToSetting} />}
@@ -159,81 +175,81 @@ const SettingApp: React.FC = () => {
 
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#E6F2F9',
-    },
-    backButton: {
-        position: 'absolute',
-        left: 0,
-    },
-    backText: {
-        fontSize: 20,
-        color: '#007BFF',
-    },
-    profileSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        padding: 5,
+  container: {
+    flex: 1,
+    backgroundColor: '#E6F2F9',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+  },
+  backText: {
+    fontSize: 20,
+    color: '#007BFF',
+  },
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 5,
 
-    },
-    icon: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        marginRight: 30,
-    },
-    angle_right: {
-        width: 20,
-        height: 20,
-    },
-    profileDetails: {
-        flexDirection: 'column',
-    },
-    profileText: {
-        fontSize: 18,
-        color: 'black',
-    },
-    settingSection: {
-        backgroundColor: '#fff',
-        padding: 10,
-        borderRadius: 10,
-        margin: 10,
-        marginTop: 20
-    },
-    sectionTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    settingItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    settingLabel: {
-        fontSize: 18,
-        color: '#333',
-        marginTop: 5,
-    },
-    changeSettings: {
-        marginTop: 20,
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 10,
-    },
-    changeButton: {
-        backgroundColor: '#ADD8E6',
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    buttonText: {
-        fontSize: 16,
-        color: 'black',
-    },
+  },
+  icon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 30,
+  },
+  angle_right: {
+    width: 20,
+    height: 20,
+  },
+  profileDetails: {
+    flexDirection: 'column',
+  },
+  profileText: {
+    fontSize: 18,
+    color: 'black',
+  },
+  settingSection: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 10,
+    margin: 10,
+    marginTop: 20
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  settingItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  settingLabel: {
+    fontSize: 18,
+    color: '#333',
+    marginTop: 5,
+  },
+  changeSettings: {
+    marginTop: 20,
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+  },
+  changeButton: {
+    backgroundColor: '#ADD8E6',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 16,
+    color: 'black',
+  },
 });
 
 export default SettingApp;
@@ -340,7 +356,7 @@ export default SettingApp;
 
 // export default SettingApp;
 
-//             {/* 
+//             {/*
 //             {currentScreen === 'Setting' ? (
 //                 <Setting onNavigate={navigateNotification} />
 //             ) : (

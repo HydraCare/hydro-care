@@ -15,6 +15,7 @@ import Svg, { Path } from "react-native-svg";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, firestore } from "./firebase"; // Ensure this is correctly imported
 import { doc, setDoc } from "firebase/firestore"; // Use Firestore for saving user data
+import LoginScreenProps from "./interface";
 
 const { width } = Dimensions.get("window");
 

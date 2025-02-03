@@ -147,8 +147,8 @@ const WaterIntakeHistory: React.FC = () => {
             setWeek_Data({ labels: week, datasets: [{ data: weekData }] });
             console.log("Weekly data:", weekData);
         } catch (error) {
-            console.error("Error fetching weekly logs from Firestore:", error);
-            setWeek_Data({ labels: week, datasets: [{ data: new Array(7).fill(0) }] }); // Trường hợp lỗi
+            console.log("Error fetching weekly logs from Firestore:", error);
+            setWeek_Data({ labels: week, datasets: [{ data: new Array(7).fill(0) }] });
         }
     };
 
